@@ -1,9 +1,10 @@
-import { AxiosStatic } from "axios"
+import axios from "axios"
 
-const CONTACT_URL = "https://erp.initgrammers.com/api/resource/Contact"
+const {ERP_URL} = process.env
+
+const CONTACT_URL = `${ERP_URL}/api/resource/Contact`
 
 export const erpCreateContact = async(
-  axios: AxiosStatic, 
   first_name: string, 
   last_name: string, 
   email: string, 
