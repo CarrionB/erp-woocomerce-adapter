@@ -1,10 +1,25 @@
-import { AxiosStatic } from "axios"
+import axios from "axios"
 import { erpCreateBillingAddress, erpCreateShippingAddress } from "../address"
 import { erpCreateContact } from "../contact"
 
-const CUSTOMER_URL = "https://erp.initgrammers.com/api/resource/Customer"
+const {ERP_URL} = process.env
 
-export const erpSearchCustomer = async (axios: AxiosStatic, {billing}: any, cookieId: string) => {
+const CUSTOMER_URL = `${ERP_URL}/api/resource/Customer`
+
+interface IShipping {
+  first_name: string,
+  last_name: string,
+  company: string,
+  address_1: string,
+  address_2: string,
+  city: string,
+  state: string,
+  postcode: string,
+  country: string,
+  phone: string
+}
+
+export const erpSearchCustomer = async ({billing, shipping}: any, cookieId: string) => {
   const {email} = billing
   try{
     const resp = await axios({
@@ -18,7 +33,7 @@ export const erpSearchCustomer = async (axios: AxiosStatic, {billing}: any, cook
     })
     const {data} = resp.data
     if(data.length === 0){
-      const respCustomer = await erpCreateCustomer(axios, billing, cookieId)
+      const respCustomer = await erpCreateCustomer(billing, shipping, cookieId)
       console.log("Created customer => ",respCustomer)
     }
   }catch(error) {
@@ -26,7 +41,7 @@ export const erpSearchCustomer = async (axios: AxiosStatic, {billing}: any, cook
   }
 }
 
-const erpCreateCustomer = async (axios: AxiosStatic, billing: any, cookieId: string) => {
+const erpCreateCustomer = async (billing: any, shipping: IShipping, cookieId: string) => {
   const {first_name, last_name, address_1, city, state, postcode, email, phone} = billing
 
   const userData = {
@@ -49,7 +64,6 @@ const erpCreateCustomer = async (axios: AxiosStatic, billing: any, cookieId: str
     })
     if(resp.data){
       const respBilling = await erpCreateBillingAddress(
-        axios, 
         first_name, 
         last_name, 
         email, 
@@ -61,17 +75,16 @@ const erpCreateCustomer = async (axios: AxiosStatic, billing: any, cookieId: str
       )
 
       const respShipping = await erpCreateShippingAddress(
-        axios, 
-        first_name, 
-        last_name, 
-        address_1, 
-        city, 
-        state, 
-        postcode, 
+        shipping.first_name, 
+        shipping.last_name, 
+        shipping.address_1, 
+        shipping.city, 
+        shipping.state, 
+        shipping.postcode, 
         cookieId
       )
 
-      const respContact = await erpCreateContact(axios, first_name, last_name, email, phone, cookieId)
+      const respContact = await erpCreateContact(first_name, last_name, email, phone, cookieId)
 
       console.log("Billing address -> ", respBilling)
       console.log("Shipping address -> ", respShipping)
