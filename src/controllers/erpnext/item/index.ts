@@ -1,15 +1,17 @@
-import { AxiosStatic } from "axios"
+import axios from "axios"
 
-const ITEM_URL = "https://erp.initgrammers.com/api/resource/Item"
+const {ERP_URL} = process.env
 
-export const erpGetitemById = async (axios: AxiosStatic, id: string, cookieId: string) => {
+const ITEM_URL = `${ERP_URL}/api/resource/Item`
+
+export const erpGetitem = async (id: string) => {
   const resp = await axios({
       method: 'GET',
       url: `${ITEM_URL}/${id}`,
       headers: {
         'Accept': 'application/json', 
         'Content-Type': 'application/json',
-        'Cookie': cookieId
+        'Cookie': process.env.ERP_LOGIN_COOKIE_ID
       }
     })
   const data = resp.data.data
@@ -17,7 +19,39 @@ export const erpGetitemById = async (axios: AxiosStatic, id: string, cookieId: s
   return {woocommerce_id, item_code, standard_rate, item_name, item_group}
 }
 
-export const erpGetitemByWId = async (axios: AxiosStatic, wid: string, cookieId: string) => {
+export const erpSetWoocomerceId = async (item_code: string, id: string, cookieId: string) => {
+  const resp = await axios({
+    method: 'PUT',
+    url: `${ITEM_URL}/${item_code}`,
+    data: {
+      woocommerce_id: id
+    },
+    headers: {
+      'Accept': 'application/json', 
+      'Content-Type': 'application/json',
+      'Cookie': cookieId
+    }
+  })
+  const data = resp.data.data
+  return data.name
+}
+
+export const erpGetitemById = async (id: string, cookieId: string) => {
+  const resp = await axios({
+    method: 'GET',
+    url: `${ITEM_URL}/${id}`,
+    headers: {
+      'Accept': 'application/json', 
+      'Content-Type': 'application/json',
+      'Cookie': cookieId
+    }
+  })
+  const data = resp.data.data
+  const {woocommerce_id, item_code, standard_rate, item_name, item_group} = data
+  return {woocommerce_id, item_code, standard_rate, item_name, item_group}
+}
+
+export const erpGetitemByWId = async (wid: string, cookieId: string) => {
   const resp = await axios({
       method: 'GET',
       url: `${ITEM_URL}?filters=[["woocommerce_id", "=", "${wid}"]]`,
