@@ -1,33 +1,34 @@
-import { AxiosStatic } from "axios"
+import axios from "axios"
 
-const SUBSCRIPTION_PLAN_URL = "https://erp.initgrammers.com/api/resource/Subscription Plan"
+const {ERP_URL} = process.env
+
+const SUBSCRIPTION_PLAN_URL = `${ERP_URL}/api/resource/Subscription Plan`
 
 export const testSubscriptionPlanExistance = async (
-  axios: AxiosStatic, 
   subscriptionName: string, 
   cookieId: string) => 
 {
-try {
-  const resp = await axios({
-    method: 'GET',
-    url: `${SUBSCRIPTION_PLAN_URL}/${subscriptionName}`,
-    headers: {
-      'Accept': 'application/json', 
-      'Content-Type': 'application/json',
-      'Cookie': cookieId
-    }
-  })
-  return resp.data
-} catch (error) {
-  console.log(error.response.status)
-  return false
-}
+  try {
+    const resp = await axios({
+      method: 'GET',
+      url: `${SUBSCRIPTION_PLAN_URL}/${subscriptionName}`,
+      headers: {
+        'Accept': 'application/json', 
+        'Content-Type': 'application/json',
+        'Cookie': cookieId
+      }
+    })
+    return resp.data
+  } catch (error) {
+    console.log(error.response.status)
+    return false
+  }
 }
 
 export const erpCreateSubscriptionPlan = async(
-axios: AxiosStatic, itemData: any, cookieId: string
+  itemData: any, cookieId: string
 ) => {
-const totalPeriodCost = parseFloat(itemData.subtotal) + parseFloat(itemData.shipping_total)
+const totalPeriodCost = parseFloat(itemData.total) + parseFloat(itemData.shipping_total)
 const data = {
   name: itemData.name,
   docstatus: 0,
@@ -38,20 +39,20 @@ const data = {
   billing_interval: "Month",
   billing_interval_count: 1
 }
-console.log("subcription plan => ", data)
-try {
-  const resp = await axios({
-    method: 'POST',
-    url: `${SUBSCRIPTION_PLAN_URL}`,
-    data,
-    headers: {
-      'Accept': 'application/json', 
-      'Content-Type': 'application/json',
-      'Cookie': cookieId
-    }
-  })
-  console.log(resp.data)
-} catch (error) {
-  console.log(error)
-}
+  console.log("subcription plan => ", data)
+  try {
+    const resp = await axios({
+      method: 'POST',
+      url: `${SUBSCRIPTION_PLAN_URL}`,
+      data,
+      headers: {
+        'Accept': 'application/json', 
+        'Content-Type': 'application/json',
+        'Cookie': cookieId
+      }
+    })
+    console.log(resp.data)
+  } catch (error) {
+    console.log(error)
+  }
 }
