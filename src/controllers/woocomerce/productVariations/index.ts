@@ -1,6 +1,21 @@
 import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
+import { WooCommerce } from "..";
 
-export const getVariationById = async (WooCommerce: WooCommerceRestApi, productId: number, variationId: number) => {
+export const listVariationById = async (
+  productId: number,
+) => {
+  try {
+    const resp = await WooCommerce.get(`products/${productId}/variations`)
+    return resp.data
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+export const getVariationById = async (
+  productId: number,
+  variationId: number
+) => {
   try {
     const resp = await WooCommerce.get(`products/${productId}/variations/${variationId}`)
     const data = {
