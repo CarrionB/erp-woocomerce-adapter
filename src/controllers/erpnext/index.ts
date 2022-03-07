@@ -1,13 +1,15 @@
-import { AxiosStatic } from "axios"
+import axios from "axios"
 
-export const erpLogin = async (axios: AxiosStatic) => {
+const {ERP_URL, ERP_USER, ERP_PASSWORD} = process.env
+
+export const erpLogin = async () => {
   const respLoginERP = await axios({
       method: 'POST',
-      url: 'https://erp.initgrammers.com/api/method/login',
+      url: `${ERP_URL}/api/method/login`,
       data: {
-        usr: "erpnext.aroma.italy.owner@gmail.com",
-        pwd: "Contrasen4_de.3rp"
-        }, 
+        usr: ERP_USER,
+        pwd: ERP_PASSWORD
+        },
       headers: { 'Content-Type': 'application/json' }
     })
   const cookieSettings = respLoginERP.headers['set-cookie'][0]
