@@ -1,9 +1,10 @@
-import { AxiosStatic } from "axios"
+import axios from "axios"
 
-const ADDRESS_URL = "https://erp.initgrammers.com/api/resource/Address"
+const {ERP_URL} = process.env
+
+const ADDRESS_URL = `${ERP_URL}/api/resource/Address`
 
 export const erpCreateBillingAddress = async(
-  axios: AxiosStatic, 
   first_name: string, 
   last_name: string, 
   email: string, 
@@ -49,7 +50,7 @@ export const erpCreateBillingAddress = async(
       }
     })
 
-    return `Billing  address created with id: ${resp.data.id}`
+    return `Billing  address created with id: ${resp.data.data.id}`
     
   } catch (error) {
     console.log(error)
@@ -57,7 +58,6 @@ export const erpCreateBillingAddress = async(
 }
 
 export const erpCreateShippingAddress = async(
-  axios: AxiosStatic, 
   first_name: string, 
   last_name: string, 
   address_1: string, 
@@ -101,7 +101,7 @@ export const erpCreateShippingAddress = async(
       }
     })
 
-    return `Shipping address created with id: ${resp.data.id}`
+    return `Shipping address created with id: ${resp.data.data.id}`
 
   } catch (error) {
     console.log(error)
