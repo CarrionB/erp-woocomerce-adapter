@@ -10,6 +10,8 @@ import { erpCreateSubscriptionPlan, testSubscriptionPlanExistance } from '../con
 import { createInvoiceForOrder, erpCreateSalesOrder} from '../controllers/erpnext/sales';
 import { erpGetStockStateRegistry } from '../controllers/erpnext/bin';
 
+const {ERP_URL} = process.env
+
 const categories: {[key:string]: number} = {
   Beans: 23,
   Subscription: 25
@@ -27,9 +29,16 @@ export const createWooComerceProduct = async (req: Request, res: Response) => {
   const images = []
   if (body.image !== null && body.image !== '')
   {
-    images.push({
-      src: body.image
-    })
+    if("/files/"  === body.image.substring(0, 7)) {
+      images.push({
+        src: `${ERP_URL}${body.image}`
+      })
+    }
+    else {
+      images.push({
+        src: body.image
+      })
+    }
   }
   categoriesAux.push({id: categories[body.item_group]})
   const data = {
@@ -66,15 +75,25 @@ export const updateWooComerceProduct = async (req: Request, res: Response) => {
     const images = []
     if (body.image !== null && body.image !== '')
     {
-      images.push({
-        src: body.image
-      })
+      if("/files/"  === body.image.substring(0, 7)) {
+        images.push({
+          src: `${ERP_URL}${body.image}`
+        })
+      }
+      else {
+        images.push({
+          src: body.image
+        })
+      }
     }
     const data = {
       name: body.item_name,
       regular_price: (body.standard_rate as Number).toFixed(2),
       images: images,
     };
+
+    console.log("data -> ", data)
+
     try {
       const respW = await WooCommerce.put(`products/${body.woocommerce_id}`, data)
       console.log('Woocomerce response -> ', respW.data)
