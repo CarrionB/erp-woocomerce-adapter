@@ -12,7 +12,7 @@ export const addCommentToOrder = async(
 
   const {name, start_date, end_date, plans} = subscriptionData
 
-  const linkToSub = `<a href=\"${SUBCRIPTION_DOC_URL}${name}\">View subcription</a>`
+  const linkToSub = `<a href=\"${SUBCRIPTION_DOC_URL}${name}\">View subscription</a>`
 
   const subPlanName = plans[0].plan
 
