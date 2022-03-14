@@ -1,21 +1,79 @@
 import axios from "axios"
+import { isLastDayOfMonth } from "../../../utilities"
 
 const {ERP_URL} = process.env
 
 const SUBSCRIPTION_URL = `${ERP_URL}/api/resource/Subscription`
 
+export const testSubscriptionExistance = async(body: any, item: any, subLength: number, cookieId:string) => {
+  const {billing, date_created} = body
+  const {first_name, last_name} = billing
+
+  const startDate = new Date(date_created)
+  const startDay = startDate.getDate()
+  let dateAux = new Date(date_created)
+  
+  try {
+    let searchTries = 0
+    while(searchTries != subLength){
+      console.log("dateAux => ", dateAux)
+      const startMonth = 
+        dateAux.getMonth() + 1 > 9 ? dateAux.getMonth() + 1 : '0' + (dateAux.getMonth() + 1)
+      const startDateNumber =
+        dateAux.getDate() > 9 ? dateAux.getDate() + 1 : '0' + dateAux.getDate()
+      const startDateString = 
+        `${dateAux.getFullYear()}-${startMonth}-${startDateNumber}`
+      const resp = await axios({
+        method: 'GET',
+        url: `${SUBSCRIPTION_URL}?filters=[["party","=","${first_name} ${last_name}"], ["start_date","=","${startDateString}"], ["Subscription+Plan+Detail","plan","=","${item.name}"]]`,
+        headers: {
+          'Accept': 'application/json', 
+          'Content-Type': 'application/json',
+          'Cookie': cookieId
+        }
+      })
+      const {data} = resp.data
+      console.log("data from test => ", data)
+      if (data.length > 0) {
+        return data[0].name
+      }
+      if(isLastDayOfMonth(startDate)){
+        if(dateAux.getDate() === startDay || dateAux.getDate() < startDay){
+          searchTries++
+          dateAux.setDate(-1)
+        }
+        else
+        {
+          dateAux.setDate(dateAux.getDate() - 1)
+        }
+      }
+      else{
+        searchTries++
+        dateAux.setMonth(dateAux.getMonth() - 1)
+      }
+    }
+    return null
+  } catch (error) {
+    console.log(error)
+  }
+}
+
 export const erpCreateSubscription = async(
-  itemData: any, cookieId: string
+  body: any, item: any, subscriptionLength: number, cookieId: string
 ) => {
-  const startDate = itemData.transactionDate
+  const {billing,  date_created} = body
+  const {first_name, last_name} = billing
+  const {name, quantity} = item
+
+  const startDate = new Date(date_created)
   const startMonth = 
     startDate.getMonth() + 1 > 9 ? startDate.getMonth() + 1 :  '0' + (startDate.getMonth() + 1)
   const startDateNumber =
     startDate.getDate() > 9 ? startDate.getDate() + 1 :  '0' + startDate.getDate()
   const startDateString = 
   `${startDate.getFullYear()}-${startMonth}-${startDateNumber}`
-  const endDate = new Date(itemData.date_created)
-  endDate.setMonth(endDate.getMonth()+ parseInt(itemData.subscriptionLength))
+  const endDate = new Date(date_created)
+  endDate.setMonth(endDate.getMonth()+ subscriptionLength)
   const endMonth = 
     endDate.getMonth() + 1 > 9 ? endDate.getMonth() + 1 :  '0' + (endDate.getMonth() + 1)
   const endDateNumber =
@@ -25,7 +83,7 @@ export const erpCreateSubscription = async(
   const data = {
     docstatus: 0,
     party_type: "Customer",
-    party: `${itemData.first_name} ${itemData.last_name}`,
+    party: `${first_name} ${last_name}`,
     company: "Aroma of Italy",
     status: "Active",
     start_date: startDateString,
@@ -40,8 +98,8 @@ export const erpCreateSubscription = async(
       {
         parentfield: "plans",
         parenttype: "Subscription",
-        plan: itemData.name,
-        qty: itemData.quantity
+        plan: name,
+        qty: quantity
       }
     ]
   }
@@ -57,7 +115,7 @@ export const erpCreateSubscription = async(
         'Cookie': cookieId
       }
     })
-    return resp.data.data
+    return resp.data.data.name
   } catch (error) {
     console.log(error)
   }
@@ -66,16 +124,31 @@ export const erpCreateSubscription = async(
 export const erpAddInvoiceToSub = async(
   subid: string, invoiceId: string, cookieId: string
 )=>{
-  const data = {
-    doctype: "Subscription",
-    invoices: [
-      {
-        document_type: "Sales Invoice",
-        invoice: invoiceId,
-      }
-    ]
-  }
+  
   try {
+    const respForInvoices = await axios({
+      method: 'GET',
+      url: `${SUBSCRIPTION_URL}/${subid}`,
+      headers: {
+        'Accept': 'application/json', 
+        'Content-Type': 'application/json',
+        'Cookie': cookieId
+      }
+    })
+
+    const {invoices} = respForInvoices.data.data
+
+    const data = {
+      doctype: "Subscription",
+      invoices: [
+        ...invoices,
+        {
+          document_type: "Sales Invoice",
+          invoice: invoiceId,
+        }
+      ]
+    }
+
     const resp = await axios({
       method: 'PUT',
       url: `${SUBSCRIPTION_URL}/${subid}`,
