@@ -9,6 +9,8 @@ import { getVariationById } from '../controllers/woocomerce/productVariations';
 import { erpCreateSubscriptionPlan, testSubscriptionPlanExistance } from '../controllers/erpnext/subscriptionPlan';
 import { createInvoiceForOrder, erpCreateSalesOrder} from '../controllers/erpnext/sales';
 import { erpGetStockStateRegistry } from '../controllers/erpnext/bin';
+import { erpAddInvoiceToSub, erpCreateSubscription, getSubscriptionById, testSubscriptionExistance } from '../controllers/erpnext/subscription';
+import { addCommentToOrder } from '../controllers/erpnext/comments';
 
 const {ERP_URL} = process.env
 
@@ -138,8 +140,8 @@ export const updateWooComerceStock = async (req: Request, res: Response) => {
 export const buildIncomingOrder = async (req: Request, res: Response) => {
   const cookieId = await erpLogin()
   await erpSearchCustomer(req.body, cookieId)
-  const {id, line_items, billing, shipping_total, date_created} = req.body
-  console.log(req.body)
+  const {line_items, shipping_total, date_created} = req.body
+  console.log("body => ", req.body)
 
   const dateAux = new Date(date_created)
   dateAux.setDate(dateAux.getDate()+5)
@@ -167,7 +169,8 @@ export const buildIncomingOrder = async (req: Request, res: Response) => {
       }
       const variationParameters = await getVariationById(item.product_id, item.variation_id)
       console.log(variationParameters)
-      if(variationParameters.subscriptionPeriod === 'day'){
+      const {subscriptionLength, subscriptionPeriod} = variationParameters
+      if(subscriptionPeriod === 'day'){
         return{
           item_code: itemId,
           qty: item.quantity,
@@ -178,6 +181,21 @@ export const buildIncomingOrder = async (req: Request, res: Response) => {
       if(!test){
         await erpCreateSubscriptionPlan({...item, itemId, shipping_total}, cookieId)
       }
+
+      const subscriptionExists = await testSubscriptionExistance(req.body, item, subscriptionLength, cookieId)
+
+      console.log("subscriptionExists => ", subscriptionExists)
+
+      if(!subscriptionExists){
+        await erpCreateSubscription(req.body, item, subscriptionLength, cookieId)
+      }
+
+      const subscriptionId = 
+        !!subscriptionExists ? 
+          subscriptionExists : 
+          await erpCreateSubscription(req.body, item, subscriptionLength, cookieId)
+      
+      const subcriptionData = await getSubscriptionById(subscriptionId, cookieId)
       
       const itemForSubscription = [
         {
@@ -195,13 +213,18 @@ export const buildIncomingOrder = async (req: Request, res: Response) => {
         cookieId,
         true
       )
-      console.log("Sales order created => ", orderForSub)
+
+      console.log("Sales order created => ", orderForSub.name)
+
       const createdInvoiceForSub = await createInvoiceForOrder(
-        req.body, orderForSub.data.name,
+        req.body, orderForSub.name,
         itemForSubscription,
         cookieId
       )
+      await erpAddInvoiceToSub(subscriptionId, createdInvoiceForSub.name, cookieId)
       console.log(createdInvoiceForSub)
+
+      await addCommentToOrder(subcriptionData, orderForSub.name, cookieId)
     }
   }))
 
