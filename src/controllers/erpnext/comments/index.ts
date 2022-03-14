@@ -10,7 +10,7 @@ export const addCommentToOrder = async(
 
   const {start_date, end_date, plans} = subscriptionData
 
-  const subPlanName = plans[0].name
+  const subPlanName = plans[0].plan
 
   const comment = `<div class=\"ql-editor+read-mode\"><p>Subcription: ${subPlanName}</p><p>Start date: ${start_date}</p><p>End date: ${end_date}</p></div>`
 
