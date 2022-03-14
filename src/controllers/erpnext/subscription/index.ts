@@ -5,6 +5,21 @@ const {ERP_URL} = process.env
 
 const SUBSCRIPTION_URL = `${ERP_URL}/api/resource/Subscription`
 
+export const getSubscriptionById = async(
+  subid: string, cookieId: string
+)=>{
+  const resp = await axios({
+    method: 'GET',
+    url: `${SUBSCRIPTION_URL}/${subid}`,
+    headers: {
+      'Accept': 'application/json', 
+      'Content-Type': 'application/json',
+      'Cookie': cookieId
+    }
+  })
+  return resp.data.data
+}
+
 export const testSubscriptionExistance = async(body: any, item: any, subLength: number, cookieId:string) => {
   const {billing, date_created} = body
   const {first_name, last_name} = billing
