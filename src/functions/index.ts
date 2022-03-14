@@ -239,7 +239,7 @@ export const buildIncomingOrder = async (req: Request, res: Response) => {
       cookieId
     )
     console.log("Sales order created => ", resp)
-    const createdInvoice = await createInvoiceForOrder(req.body, resp.data.name, items, cookieId)
+    const createdInvoice = await createInvoiceForOrder(req.body, resp.name, items, cookieId)
     console.log(createdInvoice)
   }
   res.send('Ok');
