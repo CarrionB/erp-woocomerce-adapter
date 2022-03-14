@@ -33,7 +33,7 @@ export const getVariationById = async (
         }
       })
     data.subscriptionPeriod = values[0].value
-    data.subscriptionLength = values[1].value
+    data.subscriptionLength = parseInt(values[1].value)
     return data
   } catch (error) {
     console.log(error)
