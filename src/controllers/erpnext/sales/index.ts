@@ -83,7 +83,7 @@ export const erpCreateSalesOrder = async (
     await addTagToOrder(resp.data.data.name, "Subscription", cookieId)
   }
 
-  return resp.data
+  return resp.data.data
 }
 
 export const createInvoiceForOrder  = async (body: any, salesOrderId: string, items: Array<any>, cookieId: string) => {
@@ -137,7 +137,7 @@ export const createInvoiceForOrder  = async (body: any, salesOrderId: string, it
     ]
   }
 
-  console.log("invoice data => ", invoiceData)
+  // console.log("invoice data => ", invoiceData)
 
   const resp = await axios({
     method: 'POST',
@@ -205,7 +205,7 @@ export const createInvoice  = async (body: any, itemId: string, item: any, cooki
     ]
   }
 
-  console.log("invoice data => ", invoiceData)
+  // console.log("invoice data => ", invoiceData)
 
   const resp = await axios({
     method: 'POST',
