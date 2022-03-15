@@ -10,7 +10,9 @@ import { erpCreateSubscriptionPlan, testSubscriptionPlanExistance } from '../con
 import { createInvoiceForOrder, erpCreateSalesOrder} from '../controllers/erpnext/sales';
 import { erpGetStockStateRegistry } from '../controllers/erpnext/bin';
 import { erpAddInvoiceToSub, erpCreateSubscription, getSubscriptionById, testSubscriptionExistance } from '../controllers/erpnext/subscription';
-import { addCommentToOrder } from '../controllers/erpnext/comments';
+import { addCustomerGroupCommentToOrder, addSubscriptionCommentToOrder } from '../controllers/erpnext/comments';
+import { getCustomerB2BGroup } from '../controllers/woocomerce/customer';
+import { addTagToOrder } from '../controllers/erpnext/tag';
 
 const {ERP_URL} = process.env
 
@@ -221,25 +223,35 @@ export const buildIncomingOrder = async (req: Request, res: Response) => {
         itemForSubscription,
         cookieId
       )
+
       await erpAddInvoiceToSub(subscriptionId, createdInvoiceForSub.name, cookieId)
       console.log(createdInvoiceForSub)
 
-      await addCommentToOrder(subcriptionData, orderForSub.name, cookieId)
+      await addSubscriptionCommentToOrder(
+        subcriptionData,
+        orderForSub.name,
+        cookieId
+      )
     }
   }))
 
   const items = itemsAux.filter(item => item !== undefined)
 
   if(items.length > 0) {
-    const resp = await erpCreateSalesOrder(
+    const orderGenerated = await erpCreateSalesOrder(
       req.body, 
       transactionDateString,
       deliveryDateString,
       items,
       cookieId
     )
-    console.log("Sales order created => ", resp)
-    const createdInvoice = await createInvoiceForOrder(req.body, resp.name, items, cookieId)
+    console.log("Sales order created => ", orderGenerated.name)
+    const customerGroup = await getCustomerB2BGroup(req.body)
+    if(customerGroup !== "Guest") {
+      await addTagToOrder(orderGenerated.name, customerGroup, cookieId)
+      await addCustomerGroupCommentToOrder(orderGenerated.name, customerGroup, cookieId)
+    }
+    const createdInvoice = await createInvoiceForOrder(req.body, orderGenerated.name, items, cookieId)
     console.log(createdInvoice)
   }
   res.send('Ok');
