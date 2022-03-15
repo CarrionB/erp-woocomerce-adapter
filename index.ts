@@ -25,7 +25,7 @@ app.listen(PORT, () => {
 
 app.get('/', testFunction);
 
-app.post('/', testFunction);
+app.post('/', jsonParser, testFunction);
 
 app.post('/item_creation', urlencodedParser, createWooComerceProduct);
 
