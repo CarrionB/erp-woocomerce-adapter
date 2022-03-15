@@ -1,4 +1,3 @@
-import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
 import { WooCommerce } from "..";
 
 export const listVariationById = async (
