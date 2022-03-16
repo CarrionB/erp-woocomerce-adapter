@@ -48,6 +48,7 @@ export const createWooComerceProduct = async (req: Request, res: Response) => {
   const data = {
     name: body.item_name,
     type: "simple",
+    status: "draft",
     manage_stock: true,
     stock_quantity: body.opening_stock,
     regular_price: (body.valuation_rate as Number).toFixed(2),
