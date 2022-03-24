@@ -19,12 +19,18 @@ export const getVariationById = async (
     const resp = await WooCommerce.get(`products/${productId}/variations/${variationId}`)
     const data = {
       subscriptionPeriod: "",
-      subscriptionLength: 0
+      subscriptionLength: 0,
+      subscriptionInterval: 0
     }
+
+    console.log("cvariation data => ", resp.data)
 
     const values = resp.data.meta_data.filter(
       item => {
         if(item.key === "_subscription_period"){
+          return item
+        }
+        if(item.key === "_subscription_period_interval"){
           return item
         }
         if(item.key === "_subscription_length"){
@@ -32,7 +38,8 @@ export const getVariationById = async (
         }
       })
     data.subscriptionPeriod = values[0].value
-    data.subscriptionLength = parseInt(values[1].value)
+    data.subscriptionInterval = parseInt(values[1].value)
+    data.subscriptionLength = parseInt(values[2].value)
     return data
   } catch (error) {
     console.log(error)
