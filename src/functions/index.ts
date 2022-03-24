@@ -22,6 +22,7 @@ const categories: {[key:string]: number} = {
 }
 
 export const testFunction = async (req: Request, res: Response) => {
+  console.log("order data => ", req.body)
   res.send('Hello World, from erp-to-woocomerce-adapter');
 }
 
@@ -172,7 +173,11 @@ export const buildIncomingOrder = async (req: Request, res: Response) => {
       }
       const variationParameters = await getVariationById(item.product_id, item.variation_id)
       console.log(variationParameters)
-      const {subscriptionLength, subscriptionPeriod} = variationParameters
+      const {
+        subscriptionLength, 
+        subscriptionInterval,
+        subscriptionPeriod
+      } = variationParameters
       if(subscriptionPeriod === 'day'){
         return{
           item_code: itemId,
@@ -181,17 +186,20 @@ export const buildIncomingOrder = async (req: Request, res: Response) => {
         }
       }
       const test = await testSubscriptionPlanExistance(item.name, cookieId)
+      
       if(!test){
         await erpCreateSubscriptionPlan({...item, itemId, shipping_total}, cookieId)
       }
 
-      const subscriptionExists = await testSubscriptionExistance(req.body, item, subscriptionLength, cookieId)
+      const subscriptionExists = await testSubscriptionExistance(
+        req.body,
+        item,
+        subscriptionLength,
+        subscriptionInterval,
+        cookieId
+      )
 
       console.log("subscriptionExists => ", subscriptionExists)
-
-      if(!subscriptionExists){
-        await erpCreateSubscription(req.body, item, subscriptionLength, cookieId)
-      }
 
       const subscriptionId = 
         !!subscriptionExists ? 
@@ -226,7 +234,7 @@ export const buildIncomingOrder = async (req: Request, res: Response) => {
       )
 
       await erpAddInvoiceToSub(subscriptionId, createdInvoiceForSub.name, cookieId)
-      console.log(createdInvoiceForSub)
+      console.log("Invoice created => ", createdInvoiceForSub.name)
 
       await addSubscriptionCommentToOrder(
         subcriptionData,
@@ -253,7 +261,7 @@ export const buildIncomingOrder = async (req: Request, res: Response) => {
       await addCustomerGroupCommentToOrder(orderGenerated.name, customerGroup, cookieId)
     }
     const createdInvoice = await createInvoiceForOrder(req.body, orderGenerated.name, items, cookieId)
-    console.log(createdInvoice)
+    console.log("Invoice created => ", createdInvoice)
   }
   res.send('Ok');
 }
