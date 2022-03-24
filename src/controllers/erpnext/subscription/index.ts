@@ -1,5 +1,5 @@
 import axios from "axios"
-import { isLastDayOfMonth } from "../../../utilities"
+import { formatDateToString, isLastDayOfMonth } from "../../../utilities"
 
 const {ERP_URL} = process.env
 
@@ -20,7 +20,13 @@ export const getSubscriptionById = async(
   return resp.data.data
 }
 
-export const testSubscriptionExistance = async(body: any, item: any, subLength: number, cookieId:string) => {
+export const testSubscriptionExistance = async(
+  body: any, 
+  item: any, 
+  subLength: number,
+  subInterval: number,
+  cookieId:string
+) => {
   const {billing, date_created} = body
   const {first_name, last_name} = billing
 
@@ -30,17 +36,48 @@ export const testSubscriptionExistance = async(body: any, item: any, subLength: 
   
   try {
     let searchTries = 0
-    while(searchTries != subLength){
-      console.log("dateAux => ", dateAux)
-      const startMonth = 
-        dateAux.getMonth() + 1 > 9 ? dateAux.getMonth() + 1 : '0' + (dateAux.getMonth() + 1)
-      const startDateNumber =
-        dateAux.getDate() > 9 ? dateAux.getDate() + 1 : '0' + dateAux.getDate()
-      const startDateString = 
-        `${dateAux.getFullYear()}-${startMonth}-${startDateNumber}`
+    if(subLength > 0){
+      while(searchTries != subLength){
+        const startMonth = 
+          dateAux.getMonth() + 1 > 9 ? dateAux.getMonth() + 1 : '0' + (dateAux.getMonth() + 1)
+        const startDateNumber =
+          dateAux.getDate() > 9 ? dateAux.getDate() + 1 : '0' + dateAux.getDate()
+        const startDateString = 
+          `${dateAux.getFullYear()}-${startMonth}-${startDateNumber}`
+        const resp = await axios({
+          method: 'GET',
+          url: `${SUBSCRIPTION_URL}?filters=[["party","=","${first_name} ${last_name}"], ["start_date","=","${startDateString}"], ["Subscription+Plan+Detail","plan","=","${item.name}"]]`,
+          headers: {
+            'Accept': 'application/json', 
+            'Content-Type': 'application/json',
+            'Cookie': cookieId
+          }
+        })
+        const {data} = resp.data
+        if (data.length > 0) {
+          return data[0].name
+        }
+        if(isLastDayOfMonth(startDate)){
+          if(dateAux.getDate() === startDay || dateAux.getDate() < startDay){
+            searchTries++
+            dateAux.setDate(-1)
+          }
+          else
+          {
+            dateAux.setDate(dateAux.getDate() - 1)
+          }
+        }
+        else{
+          searchTries++
+          dateAux.setMonth(dateAux.getMonth() - 1)
+        }
+      }
+    }
+    else
+    {
       const resp = await axios({
         method: 'GET',
-        url: `${SUBSCRIPTION_URL}?filters=[["party","=","${first_name} ${last_name}"], ["start_date","=","${startDateString}"], ["Subscription+Plan+Detail","plan","=","${item.name}"]]`,
+        url: `${SUBSCRIPTION_URL}?filters=[["party","=","${first_name} ${last_name}"], ["Subscription+Plan+Detail","plan","=","${item.name}"]]`,
         headers: {
           'Accept': 'application/json', 
           'Content-Type': 'application/json',
@@ -48,23 +85,34 @@ export const testSubscriptionExistance = async(body: any, item: any, subLength: 
         }
       })
       const {data} = resp.data
-      console.log("data from test => ", data)
       if (data.length > 0) {
-        return data[0].name
-      }
-      if(isLastDayOfMonth(startDate)){
-        if(dateAux.getDate() === startDay || dateAux.getDate() < startDay){
-          searchTries++
-          dateAux.setDate(-1)
+        for (const subId of data) {
+          const sub = await getSubscriptionById(subId.name, cookieId)
+          const subDate = new Date(sub.start_date)
+          const dateStringAux = formatDateToString(dateAux)
+          dateAux = new Date(dateStringAux)
+          if(subDate.getDate() === dateAux.getDate()){
+            while(subDate.getTime() <= dateAux.getTime()){
+              if(subDate.getMonth() === dateAux.getMonth()){
+                return subId.name
+              }
+              if(isLastDayOfMonth(startDate)){
+                if(dateAux.getDate() === startDay || dateAux.getDate() < startDay){
+                  searchTries++
+                  dateAux.setDate(-1)
+                }
+                else
+                {
+                  dateAux.setDate(dateAux.getDate() - subInterval)
+                }
+              }
+              else{
+                searchTries++
+                dateAux.setMonth(dateAux.getMonth() - subInterval)
+              }
+            }
+          }
         }
-        else
-        {
-          dateAux.setDate(dateAux.getDate() - 1)
-        }
-      }
-      else{
-        searchTries++
-        dateAux.setMonth(dateAux.getMonth() - 1)
       }
     }
     return null
@@ -79,6 +127,7 @@ export const erpCreateSubscription = async(
   const {billing,  date_created} = body
   const {first_name, last_name} = billing
   const {name, quantity} = item
+  const isNeverEnd = subscriptionLength === 0
 
   const startDate = new Date(date_created)
   const startMonth = 
@@ -87,7 +136,7 @@ export const erpCreateSubscription = async(
     startDate.getDate() > 9 ? startDate.getDate() + 1 :  '0' + startDate.getDate()
   const startDateString = 
   `${startDate.getFullYear()}-${startMonth}-${startDateNumber}`
-  const endDate = new Date(date_created)
+  const endDate = !isNeverEnd ? new Date(date_created) : new Date(9998, 12, 30)
   endDate.setMonth(endDate.getMonth()+ subscriptionLength)
   const endMonth = 
     endDate.getMonth() + 1 > 9 ? endDate.getMonth() + 1 :  '0' + (endDate.getMonth() + 1)
@@ -106,7 +155,7 @@ export const erpCreateSubscription = async(
     follow_calendar_months: 1,
     generate_new_invoices_past_due_date: 0,
     days_until_due: 0,
-    cancel_at_period_end: 1,
+    cancel_at_period_end: isNeverEnd ? 0 : 1,
     generate_invoice_at_period_start: 0,
     submit_invoice: 0,
     plans: [
