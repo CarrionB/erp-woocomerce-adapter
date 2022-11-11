@@ -1,4 +1,5 @@
 import axios from "axios"
+import logger from "../../../utilities/logger"
 
 const {ERP_URL} = process.env
 
@@ -59,6 +60,6 @@ export const erpCreateContact = async(
     return `Contact created with id: ${resp.data.id}`
     
   } catch (error) {
-    console.log(error)
+    logger.error(error)
   }
 }

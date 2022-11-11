@@ -1,42 +1,44 @@
-import axios from "axios"
-import { addTagToOrder } from "../tag"
+import axios from "axios";
+import { ERPSalesOrder, WooSalesOrder } from "../../../types/salesOrder";
+import logger from "../../../utilities/logger";
+import { addTagToOrder } from "../tag";
 
-const {ERP_URL} = process.env
+const { ERP_URL } = process.env;
 
-const SALES_ORDER_URL = `${ERP_URL}/api/resource/Sales Order`
-const SALES_INVOICE_URL = `${ERP_URL}/api/resource/Sales Invoice`
+const SALES_ORDER_URL = `${ERP_URL}/api/resource/Sales Order`;
+const SALES_INVOICE_URL = `${ERP_URL}/api/resource/Sales Invoice`;
 
-export const testOrderExistance = async(wId: any, cookieId: string) =>{
+export const testOrderExistance = async (wId: any, cookieId: string) => {
   try {
     const resp = await axios({
-      method: 'GET',
+      method: "GET",
       url: `${SALES_ORDER_URL}?filters=[["woocommerce_id","=","${wId}"]]`,
       headers: {
-        'Accept': 'application/json', 
-        'Content-Type': 'application/json',
-        'Cookie': cookieId
-      }
-    })
-    const {data} = resp.data
-    if(data.length === 0){
-      return null
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Cookie: cookieId,
+      },
+    });
+    const { data } = resp.data;
+    if (data.length === 0) {
+      return null;
     }
-    return data
+    return data;
   } catch (error) {
-    console.log(error)
+    logger.error(error);
   }
-}
+};
 
 export const erpCreateSalesOrder = async (
-  body: any,
+  body: WooSalesOrder,
   transactionDateString: string,
   deliveryDateString: string,
   items: Array<any>,
   cookieId: string,
   isSubscription?: boolean
 ) => {
-  const {id, billing, shipping_total} = body
-  const {first_name, last_name} = billing
+  const { id, billing, shipping_total } = body;
+  const { first_name, last_name } = billing;
 
   const data = {
     docstatus: 1,
@@ -61,50 +63,58 @@ export const erpCreateSalesOrder = async (
         charge_type: "Actual",
         account_head: "Freight and Forwarding Charges - AOI",
         description: "Shipping Total",
-        doctype: "Sales Taxes and Charges"
-      }
+        doctype: "Sales Taxes and Charges",
+      },
     ],
-  }
+  };
 
-  console.log("data to send in order => ", data)
+  logger.info("data to send in order => ", data);
 
   const resp = await axios({
-    method: 'POST',
+    method: "POST",
     url: `${SALES_ORDER_URL}`,
     data: data,
     headers: {
-      'Accept': 'application/json', 
-      'Content-Type': 'application/json',
-      'Cookie': cookieId
-    }
-  })
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Cookie: cookieId,
+    },
+  });
 
-  if(isSubscription){
-    await addTagToOrder(resp.data.data.name, "Subscription", cookieId)
+  if (isSubscription) {
+    await addTagToOrder(resp.data.data.name, "Subscription", cookieId);
   }
 
-  return resp.data.data
-}
+  return resp.data.data as ERPSalesOrder;
+};
 
-export const createInvoiceForOrder  = async (body: any, salesOrderId: string, items: Array<any>, cookieId: string) => {
-  const {id, billing, shipping_total} = body
-  const {first_name, last_name} = billing
+export const createInvoiceForOrder = async (
+  body: WooSalesOrder,
+  order: ERPSalesOrder,
+  cookieId: string
+) => {
+  const { id, billing, shipping_total } = body;
+  const { first_name, last_name } = billing;
+  const { items, name} = order;
 
-  const itemsWithOrder = items.map(item => {
-    return{
-      ...item,
-      sales_order: salesOrderId
-    }
-  })
+  const itemsWithOrder = items.map((item) => {
+    return {
+      item_code: item.item_code,
+      qty: item.qty,
+      rate: item.rate,
+      sales_order: name,
+      so_detail: item.name,
+    };
+  });
 
-  const totalByItem = items.map(item => {
-    return item.qty * parseFloat(item.rate)
-  })
+  const totalByItem = items.map((item) => {
+    return item.qty * item.rate;
+  });
 
-  let total = totalByItem.reduce((acc, curr)=>{
-    return acc + curr
-  })
-  total = total + parseFloat(shipping_total)
+  let total = totalByItem.reduce((acc, curr) => {
+    return acc + curr;
+  });
+  total = total + parseFloat(shipping_total);
 
   const invoiceData = {
     docstatus: 0,
@@ -117,7 +127,8 @@ export const createInvoiceForOrder  = async (body: any, salesOrderId: string, it
     contact_person: `${first_name} ${last_name}-${first_name} ${last_name}`,
     territory: "United States",
     shipping_address_name: `${first_name} ${last_name}-Shipping`,
-    set_warehouse: "Aroma Warehouse - AOI",
+    // set_warehouse: "Stores - AOI",
+    // set_warehouse: "Aroma Warehouse - AOI",
     update_stock: 1,
     against_income_account: "Sales - AOI",
     items: itemsWithOrder,
@@ -126,35 +137,40 @@ export const createInvoiceForOrder  = async (body: any, salesOrderId: string, it
         charge_type: "Actual",
         account_head: "Freight and Forwarding Charges - AOI",
         description: "Shipping Total",
-        tax_amount: shipping_total
-      }
+        tax_amount: shipping_total,
+      },
     ],
     payments: [
       {
         mode_of_payment: "Cash",
-        amount: total
-      }
-    ]
-  }
+        amount: total,
+      },
+    ],
+  };
 
   // console.log("invoice data => ", invoiceData)
 
   const resp = await axios({
-    method: 'POST',
+    method: "POST",
     url: `${SALES_INVOICE_URL}`,
     data: invoiceData,
     headers: {
-      'Accept': 'application/json', 
-      'Content-Type': 'application/json',
-      'Cookie': cookieId
-    }
-  })
-  return resp.data.data
-}
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Cookie: cookieId,
+    },
+  });
+  return resp.data.data;
+};
 
-export const createInvoice  = async (body: any, itemId: string, item: any, cookieId: string) => {
-  const {id, billing, shipping_total} = body
-  const {first_name, last_name} = billing
+export const createInvoice = async (
+  body: any,
+  itemId: string,
+  item: any,
+  cookieId: string
+) => {
+  const { id, billing, shipping_total } = body;
+  const { first_name, last_name } = billing;
 
   const items = [
     {
@@ -162,17 +178,17 @@ export const createInvoice  = async (body: any, itemId: string, item: any, cooki
       qty: item.quantity,
       rate: item.total,
       conversion_factor: 1.0,
-    }
-  ]
+    },
+  ];
 
-  const totalByItem = items.map(item => {
-    return item.qty * parseFloat(item.rate)
-  })
+  const totalByItem = items.map((item) => {
+    return item.qty * parseFloat(item.rate);
+  });
 
-  let total = totalByItem.reduce((acc, curr)=>{
-    return acc + curr
-  })
-  total = total + parseFloat(shipping_total)
+  let total = totalByItem.reduce((acc, curr) => {
+    return acc + curr;
+  });
+  total = total + parseFloat(shipping_total);
 
   const invoiceData = {
     docstatus: 0,
@@ -185,7 +201,8 @@ export const createInvoice  = async (body: any, itemId: string, item: any, cooki
     contact_person: `${first_name} ${last_name}-${first_name} ${last_name}`,
     territory: "United States",
     shipping_address_name: `${first_name} ${last_name}-Shipping`,
-    set_warehouse: "Aroma Warehouse - AOI",
+    set_warehouse: "Stores - AOI",
+    // set_warehouse: "Aroma Warehouse - AOI",
     update_stock: 1,
     against_income_account: "Sales - AOI",
     items: items,
@@ -194,28 +211,28 @@ export const createInvoice  = async (body: any, itemId: string, item: any, cooki
         charge_type: "Actual",
         account_head: "Freight and Forwarding Charges - AOI",
         description: "Shipping Total",
-        tax_amount: shipping_total
-      }
+        tax_amount: shipping_total,
+      },
     ],
     payments: [
       {
         mode_of_payment: "Cash",
-        amount: total
-      }
-    ]
-  }
+        amount: total,
+      },
+    ],
+  };
 
   // console.log("invoice data => ", invoiceData)
 
   const resp = await axios({
-    method: 'POST',
+    method: "POST",
     url: `${SALES_INVOICE_URL}`,
     data: invoiceData,
     headers: {
-      'Accept': 'application/json', 
-      'Content-Type': 'application/json',
-      'Cookie': cookieId
-    }
-  })
-  return resp.data.data
-}
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Cookie: cookieId,
+    },
+  });
+  return resp.data.data;
+};

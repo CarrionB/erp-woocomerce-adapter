@@ -1,19 +1,20 @@
-import axios from "axios"
+import axios from "axios";
+import logger from "../../../utilities/logger";
 
-const {ERP_URL} = process.env
+const { ERP_URL } = process.env;
 
-const ADDRESS_URL = `${ERP_URL}/api/resource/Address`
+const ADDRESS_URL = `${ERP_URL}/api/resource/Address`;
 
-export const erpCreateBillingAddress = async(
-  first_name: string, 
-  last_name: string, 
-  email: string, 
-  address_1: string, 
-  city: string, 
+export const erpCreateBillingAddress = async (
+  first_name: string,
+  last_name: string,
+  email: string,
+  address_1: string,
+  city: string,
   state: string,
   postcode: string,
   cookieId: string
-) =>{
+) => {
   const billingData = {
     name: `${first_name} ${last_name}-Billing`,
     address_title: `${first_name} ${last_name}`,
@@ -34,39 +35,38 @@ export const erpCreateBillingAddress = async(
         link_doctype: "Customer",
         link_name: `${first_name} ${last_name}`,
         link_title: `${first_name} ${last_name}`,
-        doctype: "Dynamic Link"
-      }
-    ]
-  }
+        doctype: "Dynamic Link",
+      },
+    ],
+  };
   try {
     const resp = await axios({
-      method: 'POST',
+      method: "POST",
       url: `${ADDRESS_URL}`,
       data: billingData,
       headers: {
-        'Accept': 'application/json', 
-        'Content-Type': 'application/json',
-        'Cookie': cookieId
-      }
-    })
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Cookie: cookieId,
+      },
+    });
 
-    return `Billing  address created with id: ${resp.data.data.id}`
-    
+    return `Billing  address created with id: ${resp.data.data.id}`;
   } catch (error) {
-    console.log(error)
+    logger.error(error);
   }
-}
+};
 
-export const erpCreateShippingAddress = async(
-  first_name: string, 
-  last_name: string, 
-  address_1: string, 
-  city: string, 
+export const erpCreateShippingAddress = async (
+  first_name: string,
+  last_name: string,
+  address_1: string,
+  city: string,
   state: string,
   postcode: string,
   cookieId: string
-) =>{
-  const  shippingData = {
+) => {
+  const shippingData = {
     name: `${first_name} ${last_name}-Shipping`,
     address_title: `${first_name} ${last_name}`,
     address_type: "Shipping",
@@ -85,25 +85,24 @@ export const erpCreateShippingAddress = async(
         link_doctype: "Customer",
         link_name: `${first_name} ${last_name}`,
         link_title: `${first_name} ${last_name}`,
-        doctype: "Dynamic Link"
-      }
-    ]
-  }
+        doctype: "Dynamic Link",
+      },
+    ],
+  };
   try {
     const resp = await axios({
-      method: 'POST',
+      method: "POST",
       url: `${ADDRESS_URL}`,
       data: shippingData,
       headers: {
-        'Accept': 'application/json', 
-        'Content-Type': 'application/json',
-        'Cookie': cookieId
-      }
-    })
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Cookie: cookieId,
+      },
+    });
 
-    return `Shipping address created with id: ${resp.data.data.id}`
-
+    return `Shipping address created with id: ${resp.data.data.id}`;
   } catch (error) {
-    console.log(error)
+    logger.error(error);
   }
-}
+};

@@ -1,4 +1,5 @@
 import axios from "axios"
+import logger from "../../../utilities/logger"
 
 const {ERP_URL} = process.env
 
@@ -33,6 +34,7 @@ export const erpSetWoocomerceId = async (item_code: string, id: string, cookieId
     }
   })
   const data = resp.data.data
+  logger.info(data)
   return data.name
 }
 
@@ -51,7 +53,7 @@ export const erpGetitemById = async (id: string, cookieId: string) => {
   return {woocommerce_id, item_code, standard_rate, item_name, item_group}
 }
 
-export const erpGetitemByWId = async (wid: string, cookieId: string) => {
+export const erpGetitemByWId = async (wid: number, cookieId: string) => {
   const resp = await axios({
       method: 'GET',
       url: `${ITEM_URL}?filters=[["woocommerce_id", "=", "${wid}"]]`,

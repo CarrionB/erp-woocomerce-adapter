@@ -1,40 +1,16 @@
 import 'dotenv/config'
 import express from 'express';
 import cookieParser from 'cookie-parser';
-import bodyParser from 'body-parser';
-import { 
-  buildIncomingOrder, 
-  createWooComerceProduct, 
-  manageStock, 
-  testFunction,
-  updateWooComerceProduct, 
-} from './src/functions';
+import logger from './src/utilities/logger';
+import routes from './src/routes';
 
 const {PORT} = process.env;
 
 const app = express();
+
 app.use(cookieParser())
 
-const jsonParser = bodyParser.json()
-
-const urlencodedParser = bodyParser.urlencoded({ extended: true })
-
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}.`);
+  logger.info(`Server is running on port ${PORT}.`);
+  routes(app)
 });
-
-app.get('/', testFunction);
-
-app.post('/', jsonParser, testFunction);
-
-app.post('/item_creation', urlencodedParser, createWooComerceProduct);
-
-app.post('/item_update', urlencodedParser, updateWooComerceProduct);
-
-app.post('/stock', urlencodedParser, manageStock);
-
-app.post('/stock_discount', urlencodedParser, manageStock);
-
-app.post('/delivered_items', urlencodedParser, manageStock);
-
-app.post('/incoming_order', jsonParser, buildIncomingOrder)
