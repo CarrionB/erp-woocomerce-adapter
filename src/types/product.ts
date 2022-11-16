@@ -39,7 +39,7 @@ export interface ProductVariation {
   attributes:              Attribute[];
   menu_order:              number;
   meta_data:               MetaDatum[];
-  wcb2b_group_prices:      { [key: string]: Wcb2BGroupPrice }[];
+  wcb2b_group_prices:      { [key: string]: string }[];
   wcb2b_group_tier_prices: string[];
   wcb2b_barcode:           string[];
   wcb2b_min_quantity:      any[];
@@ -85,10 +85,5 @@ export interface Image {
 export interface MetaDatum {
   id:    number;
   key:   string;
-  value: any[] | { [key: string]: Wcb2BGroupPrice } | string;
-}
-
-export interface Wcb2BGroupPrice {
-  regular_price: string;
-  sale_price:    string;
+  value: string;
 }

@@ -1,4 +1,4 @@
-export interface ErpInvoice {
+export interface InvoiceERP {
   name: string;
   owner: string;
   creation: Date;
@@ -100,7 +100,7 @@ export interface ErpInvoice {
   total_commission: number;
   against_income_account: string;
   doctype: string;
-  items: Item[];
+  items: InvoiceItem[];
   pricing_rules: any[];
   packed_items: any[];
   timesheets: any[];
@@ -111,7 +111,7 @@ export interface ErpInvoice {
   sales_team: any[];
 }
 
-export interface Item {
+export interface InvoiceItem {
   name: string;
   owner: string;
   creation: Date;

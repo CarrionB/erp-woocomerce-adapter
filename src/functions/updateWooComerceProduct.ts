@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 
-import { WooCommerce } from "../controllers/woocomerce";
+import { WooCommerceApi } from "../controllers/woocomerce";
 import logger from "../utilities/logger";
 import { ERP_URL } from "./constants";
 
@@ -29,7 +29,7 @@ export const updateWooComerceProduct = async (req: Request, res: Response) => {
     logger.info("data -> ", data);
 
     try {
-      const respW = await WooCommerce.put(
+      const respW = await WooCommerceApi.put(
         `products/${body.woocommerce_id}`,
         data
       );

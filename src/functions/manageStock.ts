@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { erpLogin } from "../controllers/erpnext";
 import { erpGetStockStateRegistry } from "../controllers/erpnext/bin";
 import { erpGetitemById } from "../controllers/erpnext/item";
-import { WooCommerce } from "../controllers/woocomerce";
+import { WooCommerceApi } from "../controllers/woocomerce";
 import logger from "../utilities/logger";
 
 export const manageStock = async (req: Request, res: Response) => {
@@ -17,7 +17,7 @@ export const manageStock = async (req: Request, res: Response) => {
     const stockToUpdate = await Promise.all(
       itemCodes.map(async (itemCode) => {
         const quantity = await erpGetStockStateRegistry(itemCode, cookieId);
-        const { woocommerce_id } = await erpGetitemById(itemCode, cookieId);
+        const { woocommerce_id } = await erpGetitemById(itemCode);
         return {
           woocommerce_id,
           quantity,
@@ -30,7 +30,7 @@ export const manageStock = async (req: Request, res: Response) => {
           manage_stock: true,
           stock_quantity: quantity,
         };
-        const respW = await WooCommerce.put(`products/${woocommerce_id}`, data);
+        const respW = await WooCommerceApi.put(`products/${woocommerce_id}`, data);
         logger.info(`Woocomerce response -> ${respW.data.id}`);
         logger.info(`quantity => ${respW.data.stock_quantity}`);
       })

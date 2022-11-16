@@ -1,33 +1,23 @@
 import axios from "axios";
-import { LineItem, WooSalesOrder } from "../../../types/salesOrder";
+import erpApi from "..";
+import { SalesOrderItemWoo, SalesOrderWoo } from "../../../types/salesOrder";
 import { formatDateToString, isLastDayOfMonth } from "../../../utilities";
 import logger from "../../../utilities/logger";
 
-const { ERP_URL } = process.env;
+const SUBSCRIPTION_URL = `/api/resource/Subscription`;
 
-const SUBSCRIPTION_URL = `${ERP_URL}/api/resource/Subscription`;
-
-export const getSubscriptionById = async (subid: string, cookieId: string) => {
-  const resp = await axios({
-    method: "GET",
-    url: `${SUBSCRIPTION_URL}/${subid}`,
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      Cookie: cookieId,
-    },
-  });
+export const getSubscriptionById = async (subid: string) => {
+  const resp = await erpApi.get(`${SUBSCRIPTION_URL}/${subid}`);
   return resp.data.data;
 };
 
 export const testSubscriptionExistance = async (
-  body: WooSalesOrder,
-  item: LineItem,
+  order: SalesOrderWoo,
+  item: SalesOrderItemWoo,
   subLength: number,
-  subInterval: number,
-  cookieId: string
+  subInterval: number
 ) => {
-  const { billing, date_created } = body;
+  const { billing, date_created } = order;
   const { first_name, last_name } = billing;
 
   const startDate = new Date(date_created);
@@ -47,15 +37,9 @@ export const testSubscriptionExistance = async (
             ? dateAux.getDate() + 1
             : "0" + dateAux.getDate();
         const startDateString = `${dateAux.getFullYear()}-${startMonth}-${startDateNumber}`;
-        const resp = await axios({
-          method: "GET",
-          url: `${SUBSCRIPTION_URL}?filters=[["party","=","${first_name} ${last_name}"], ["start_date","=","${startDateString}"], ["Subscription+Plan+Detail","plan","=","${item.name}"]]`,
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Cookie: cookieId,
-          },
-        });
+        const resp = await erpApi.get(
+          `${SUBSCRIPTION_URL}?filters=[["party","=","${first_name} ${last_name}"], ["start_date","=","${startDateString}"], ["Subscription+Plan+Detail","plan","=","${item.name}"]]`
+        );
         const { data } = resp.data;
         if (data.length > 0) {
           return data[0].name;
@@ -73,19 +57,13 @@ export const testSubscriptionExistance = async (
         }
       }
     } else {
-      const resp = await axios({
-        method: "GET",
-        url: `${SUBSCRIPTION_URL}?filters=[["party","=","${first_name} ${last_name}"], ["Subscription+Plan+Detail","plan","=","${item.name}"]]`,
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Cookie: cookieId,
-        },
-      });
+      const resp = await erpApi.get(
+        `${SUBSCRIPTION_URL}?filters=[["party","=","${first_name} ${last_name}"], ["Subscription+Plan+Detail","plan","=","${item.name}"]]`
+      );
       const { data } = resp.data;
       if (data.length > 0) {
         for (const subId of data) {
-          const sub = await getSubscriptionById(subId.name, cookieId);
+          const sub = await getSubscriptionById(subId.name);
           const subDate = new Date(sub.start_date);
           const dateStringAux = formatDateToString(dateAux);
           dateAux = new Date(dateStringAux);
@@ -120,10 +98,9 @@ export const testSubscriptionExistance = async (
 };
 
 export const erpCreateSubscription = async (
-  body: WooSalesOrder,
+  body: SalesOrderWoo,
   item: any,
-  subscriptionLength: number,
-  cookieId: string
+  subscriptionLength: number
 ) => {
   const { billing, date_created } = body;
   const { first_name, last_name } = billing;
@@ -174,16 +151,7 @@ export const erpCreateSubscription = async (
   };
   logger.info("subcription data => ", data);
   try {
-    const resp = await axios({
-      method: "POST",
-      url: `${SUBSCRIPTION_URL}`,
-      data,
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Cookie: cookieId,
-      },
-    });
+    const resp = await erpApi.post(`${SUBSCRIPTION_URL}`, data);
     return resp.data.data.name;
   } catch (error) {
     logger.error(error);
@@ -193,20 +161,11 @@ export const erpCreateSubscription = async (
 export const erpAddInvoiceToSub = async (
   subid: string,
   invoiceId: string,
-  cookieId: string
 ) => {
   try {
-    const respForInvoices = await axios({
-      method: "GET",
-      url: `${SUBSCRIPTION_URL}/${subid}`,
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Cookie: cookieId,
-      },
-    });
+    const {data: subscription} = await axios(`${SUBSCRIPTION_URL}/${subid}`);
 
-    const { invoices } = respForInvoices.data.data;
+    const { invoices } = subscription.data;
 
     const data = {
       doctype: "Subscription",
@@ -219,17 +178,8 @@ export const erpAddInvoiceToSub = async (
       ],
     };
 
-    const resp = await axios({
-      method: "PUT",
-      url: `${SUBSCRIPTION_URL}/${subid}`,
-      data,
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Cookie: cookieId,
-      },
-    });
-    return resp.data.data;
+    const {data: resp} = await erpApi.put(`${SUBSCRIPTION_URL}/${subid}`, data);
+    return resp.data;
   } catch (error) {
     logger.error(error);
   }

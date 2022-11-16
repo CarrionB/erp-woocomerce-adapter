@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { erpLogin } from "../controllers/erpnext";
 import { erpSetWoocomerceId } from "../controllers/erpnext/item";
-import { WooCommerce } from "../controllers/woocomerce";
+import { WooCommerceApi } from "../controllers/woocomerce";
 import { categories, ERP_URL } from "./constants";
 import logger from "../utilities/logger";
 
@@ -36,7 +36,7 @@ export const createWooComerceProduct = async (req: Request, res: Response) => {
   logger.info("data -> ", data);
 
   try {
-    const respW = await WooCommerce.post("products", data);
+    const respW = await WooCommerceApi.post("products", data);
     logger.info("Woocomerceresponde -> ", respW.data);
     const { id } = respW.data;
     const cookieId = await erpLogin();
@@ -44,7 +44,6 @@ export const createWooComerceProduct = async (req: Request, res: Response) => {
       const respUpdateItemERP = await erpSetWoocomerceId(
         body.item_code,
         id,
-        cookieId
       );
       logger.info("resp update item erp  -> ", respUpdateItemERP);
     }

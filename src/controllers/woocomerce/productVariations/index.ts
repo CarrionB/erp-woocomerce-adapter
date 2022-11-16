@@ -1,9 +1,12 @@
-import { WooCommerce } from "..";
+import { WooCommerceApi } from "..";
+import { ProductVariation } from "../../../types/product";
 import logger from "../../../utilities/logger";
 
 export const listVariationById = async (productId: number) => {
   try {
-    const resp = await WooCommerce.get(`products/${productId}/variations`);
+    const resp: GetVariationListResponse = await WooCommerceApi.get(
+      `products/${productId}/variations`
+    );
     return resp.data;
   } catch (error) {
     logger.error(error);
@@ -15,7 +18,7 @@ export const getVariationById = async (
   variationId: number
 ) => {
   try {
-    const resp = await WooCommerce.get(
+    const resp: GetVariationResponse = await WooCommerceApi.get(
       `products/${productId}/variations/${variationId}`
     );
 
@@ -47,4 +50,12 @@ export const getVariationById = async (
   } catch (error) {
     logger.error(error);
   }
+};
+
+type GetVariationListResponse = {
+  data: ProductVariation[];
+};
+
+type GetVariationResponse = {
+  data: ProductVariation;
 };

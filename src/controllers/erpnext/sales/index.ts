@@ -1,5 +1,5 @@
-import axios from "axios";
-import { ERPSalesOrder, WooSalesOrder } from "../../../types/salesOrder";
+import erpApi from "..";
+import { SalesOrderERP, SalesOrderWoo } from "../../../types/salesOrder";
 import logger from "../../../utilities/logger";
 import { addTagToOrder } from "../tag";
 
@@ -10,16 +10,10 @@ const SALES_INVOICE_URL = `${ERP_URL}/api/resource/Sales Invoice`;
 
 export const testOrderExistance = async (wId: any, cookieId: string) => {
   try {
-    const resp = await axios({
-      method: "GET",
-      url: `${SALES_ORDER_URL}?filters=[["woocommerce_id","=","${wId}"]]`,
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Cookie: cookieId,
-      },
-    });
-    const { data } = resp.data;
+    const {data: resp} = await erpApi.get(
+      `${SALES_ORDER_URL}?filters=[["woocommerce_id","=","${wId}"]]`
+    );
+    const { data } = resp;
     if (data.length === 0) {
       return null;
     }
@@ -30,11 +24,10 @@ export const testOrderExistance = async (wId: any, cookieId: string) => {
 };
 
 export const erpCreateSalesOrder = async (
-  body: WooSalesOrder,
+  body: SalesOrderWoo,
   transactionDateString: string,
   deliveryDateString: string,
   items: Array<any>,
-  cookieId: string,
   isSubscription?: boolean
 ) => {
   const { id, billing, shipping_total } = body;
@@ -70,32 +63,22 @@ export const erpCreateSalesOrder = async (
 
   logger.info("data to send in order => ", data);
 
-  const resp = await axios({
-    method: "POST",
-    url: `${SALES_ORDER_URL}`,
-    data: data,
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      Cookie: cookieId,
-    },
-  });
+  const { data: resp } = await erpApi.post(`${SALES_ORDER_URL}`, data);
 
   if (isSubscription) {
-    await addTagToOrder(resp.data.data.name, "Subscription", cookieId);
+    await addTagToOrder(resp.data.name, "Subscription");
   }
 
-  return resp.data.data as ERPSalesOrder;
+  return resp.data.data as SalesOrderERP;
 };
 
 export const createInvoiceForOrder = async (
-  body: WooSalesOrder,
-  order: ERPSalesOrder,
-  cookieId: string
+  body: SalesOrderWoo,
+  order: SalesOrderERP
 ) => {
   const { id, billing, shipping_total } = body;
   const { first_name, last_name } = billing;
-  const { items, name} = order;
+  const { items, name } = order;
 
   const itemsWithOrder = items.map((item) => {
     return {
@@ -150,89 +133,6 @@ export const createInvoiceForOrder = async (
 
   // console.log("invoice data => ", invoiceData)
 
-  const resp = await axios({
-    method: "POST",
-    url: `${SALES_INVOICE_URL}`,
-    data: invoiceData,
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      Cookie: cookieId,
-    },
-  });
-  return resp.data.data;
-};
-
-export const createInvoice = async (
-  body: any,
-  itemId: string,
-  item: any,
-  cookieId: string
-) => {
-  const { id, billing, shipping_total } = body;
-  const { first_name, last_name } = billing;
-
-  const items = [
-    {
-      item_code: itemId,
-      qty: item.quantity,
-      rate: item.total,
-      conversion_factor: 1.0,
-    },
-  ];
-
-  const totalByItem = items.map((item) => {
-    return item.qty * parseFloat(item.rate);
-  });
-
-  let total = totalByItem.reduce((acc, curr) => {
-    return acc + curr;
-  });
-  total = total + parseFloat(shipping_total);
-
-  const invoiceData = {
-    docstatus: 0,
-    naming_series: "ACC-SINV-.YYYY.-",
-    customer: `${first_name} ${last_name}`,
-    is_pos: 1,
-    company: "Aroma of Italy",
-    po_no: id,
-    customer_address: `${first_name} ${last_name}-Billing`,
-    contact_person: `${first_name} ${last_name}-${first_name} ${last_name}`,
-    territory: "United States",
-    shipping_address_name: `${first_name} ${last_name}-Shipping`,
-    set_warehouse: "Stores - AOI",
-    // set_warehouse: "Aroma Warehouse - AOI",
-    update_stock: 1,
-    against_income_account: "Sales - AOI",
-    items: items,
-    taxes: [
-      {
-        charge_type: "Actual",
-        account_head: "Freight and Forwarding Charges - AOI",
-        description: "Shipping Total",
-        tax_amount: shipping_total,
-      },
-    ],
-    payments: [
-      {
-        mode_of_payment: "Cash",
-        amount: total,
-      },
-    ],
-  };
-
-  // console.log("invoice data => ", invoiceData)
-
-  const resp = await axios({
-    method: "POST",
-    url: `${SALES_INVOICE_URL}`,
-    data: invoiceData,
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      Cookie: cookieId,
-    },
-  });
-  return resp.data.data;
+  const { data: resp } = await erpApi.post(`${SALES_INVOICE_URL}`, invoiceData);
+  return resp.data;
 };

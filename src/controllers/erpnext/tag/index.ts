@@ -1,29 +1,15 @@
-import axios from "axios";
+import erpApi from "..";
 
-const { ERP_URL } = process.env;
-const ADD_TAG_URL = `${ERP_URL}/api/method/frappe.desk.doctype.tag.tag.add_tag`;
+const ADD_TAG_URL = `/api/method/frappe.desk.doctype.tag.tag.add_tag`;
 
-export const addTagToOrder = async (
-  salesOrderId: string,
-  tag: string,
-  cookieId: string
-) => {
+export const addTagToOrder = async (salesOrderId: string, tag: string) => {
   const data = {
     tag: tag,
     dt: "Sales Order",
     dn: salesOrderId,
   };
 
-  const resp = await axios({
-    method: "POST",
-    url: ADD_TAG_URL,
-    data: data,
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      Cookie: cookieId,
-    },
-  });
+  const resp = await erpApi.post(ADD_TAG_URL, data);
 
   return resp.data;
 };

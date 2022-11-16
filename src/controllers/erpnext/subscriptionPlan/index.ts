@@ -1,24 +1,17 @@
-import axios from "axios";
+import erpApi from "..";
+import { SalesOrderItemWoo } from "../../../types/salesOrder";
 import logger from "../../../utilities/logger";
+import { parseSubPlanData } from "./parse";
 
-const { ERP_URL } = process.env;
-
-const SUBSCRIPTION_PLAN_URL = `${ERP_URL}/api/resource/Subscription Plan`;
+const SUBSCRIPTION_PLAN_URL = `/api/resource/Subscription Plan`;
 
 export const testSubscriptionPlanExistance = async (
-  subscriptionName: string,
-  cookieId: string
+  subscriptionName: string
 ) => {
   try {
-    const resp = await axios({
-      method: "GET",
-      url: `${SUBSCRIPTION_PLAN_URL}/${subscriptionName}`,
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Cookie: cookieId,
-      },
-    });
+    const resp = await erpApi.get(
+      `${SUBSCRIPTION_PLAN_URL}/${subscriptionName}`
+    );
     return resp.data;
   } catch (error) {
     logger.error(error);
@@ -26,37 +19,22 @@ export const testSubscriptionPlanExistance = async (
   }
 };
 
-export const erpCreateSubscriptionPlan = async (
-  itemData: any,
-  cookieId: string
-) => {
+export const erpCreateSubscriptionPlan = async (itemData: SubPlanInput) => {
+  const {total, shipping_total} = itemData;
   const totalPeriodCost =
-    parseFloat(itemData.total) + parseFloat(itemData.shipping_total);
-  const data = {
-    name: itemData.name,
-    docstatus: 0,
-    plan_name: itemData.name,
-    item: itemData.itemId,
-    price_determination: "Monthly Rate",
-    cost: totalPeriodCost.toFixed(2),
-    billing_interval: "Month",
-    billing_interval_count: 1,
-  };
+    parseFloat(total) + parseFloat(shipping_total);
+  const data = parseSubPlanData(itemData, totalPeriodCost);
   logger.info("subcription plan => ", data);
   try {
-    const resp = await axios({
-      method: "POST",
-      url: `${SUBSCRIPTION_PLAN_URL}`,
-      data,
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Cookie: cookieId,
-      },
-    });
-    logger.info('Subscription plan')
+    const resp = await erpApi.post(`${SUBSCRIPTION_PLAN_URL}`, data);
+    logger.info("Subscription plan");
     logger.info(resp.data);
   } catch (error) {
     logger.error(error);
   }
 };
+
+export interface SubPlanInput extends Partial<SalesOrderItemWoo> {
+  shipping_total: string;
+  itemId: string;
+}
