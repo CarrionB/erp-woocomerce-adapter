@@ -20,7 +20,6 @@ export const erpLogin = async () => {
     const expirationDateString = cookieSettings[1].split("=")[1];
     storage.setItem("cookieId", cookieId);
     storage.setItem("expirationDateString", expirationDateString);
-    return cookieId;
   }
 };
 

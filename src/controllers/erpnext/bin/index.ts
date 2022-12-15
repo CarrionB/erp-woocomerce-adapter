@@ -1,24 +1,14 @@
-import axios from "axios"
+import erpApi from ".."
 
-const {ERP_URL} = process.env
+const BIN_URL = `/api/resource/Bin`
 
-const BIN_URL = `${ERP_URL}/api/resource/Bin`
-
-export const erpGetStockStateRegistry = async (item_code: string, cookieId: string) => {
-  const resp = await axios({
-    method: 'GET',
-    url: `${BIN_URL}?filters=[["item_code","=","${item_code}"]]`,
-    headers: {
-      'Accept': 'application/json', 
-      'Content-Type': 'application/json',
-      'Cookie': cookieId
-    }
-  })
+export const erpGetStockStateRegistry = async (item_code: string) => {
+  const resp = await erpApi.get(`${BIN_URL}?filters=[["item_code","=","${item_code}"]]`)
   const {data} = resp.data
   if(data.length > 0){
     const quantities = await Promise.all(
       data.map(async(item)=>{
-        const stockState = await erpGetStockState(item.name, cookieId)
+        const stockState = await erpGetStockState(item.name)
         return stockState.actual_qty
       })
     )
@@ -27,15 +17,7 @@ export const erpGetStockStateRegistry = async (item_code: string, cookieId: stri
   }
 }
 
-const erpGetStockState = async (bin_id: string, cookieId: string) => {
-  const resp = await axios({
-    method: 'GET',
-    url: `${BIN_URL}/${bin_id}`,
-    headers: {
-      'Accept': 'application/json', 
-      'Content-Type': 'application/json',
-      'Cookie': cookieId
-    }
-  })
+const erpGetStockState = async (bin_id: string) => {
+  const resp = await erpApi.get(`${BIN_URL}/${bin_id}`)
   return resp.data.data
 }

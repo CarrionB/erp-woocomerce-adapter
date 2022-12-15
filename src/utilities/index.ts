@@ -13,3 +13,14 @@ export const formatDateToString = (date: Date) => {
     date.getDate() > 9 ? date.getDate() + 1 :  '0' + date.getDate()
   return `${date.getFullYear()}-${startMonth}-${dateNumber}`
 }
+
+export const removeHTMLTags = (stringTagged: string) => {
+  let untaggedString = stringTagged;
+  while (untaggedString.includes("<")) {
+    const indexStartTag = untaggedString.indexOf("<");
+    const indexEndTag = untaggedString.indexOf(">") + 1;
+    const tagToRemove = untaggedString.slice(indexStartTag, indexEndTag);
+    untaggedString = untaggedString.replace(tagToRemove, "");
+  }
+  return untaggedString;
+};

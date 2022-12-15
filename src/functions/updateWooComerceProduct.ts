@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 
 import { WooCommerceApi } from "../controllers/woocomerce";
+import { removeHTMLTags } from "../utilities";
 import logger from "../utilities/logger";
 import { ERP_URL } from "./constants";
 
@@ -20,25 +21,26 @@ export const updateWooComerceProduct = async (req: Request, res: Response) => {
         });
       }
     }
-    const data = {
+    const dataToSend = {
       name: body.item_name,
+      description: removeHTMLTags(body.description),
       regular_price: (body.standard_rate as Number).toFixed(2),
       images: images,
     };
 
-    logger.info("data -> ", data);
+    logger.info("dataToSend -> ", dataToSend);
 
     try {
       const respW = await WooCommerceApi.put(
         `products/${body.woocommerce_id}`,
-        data
+        dataToSend
       );
       logger.info("updateWooComerceProduct");
       logger.info("Woocomerce response -> ");
-      logger.info(respW);
+      logger.info(respW.id);
     } catch (error) {
       logger.error(error);
     }
   }
-  res.send("Ok");
+  res.status(200).send()
 };

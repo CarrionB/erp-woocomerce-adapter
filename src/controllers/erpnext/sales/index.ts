@@ -69,7 +69,7 @@ export const erpCreateSalesOrder = async (
     await addTagToOrder(resp.data.name, "Subscription");
   }
 
-  return resp.data.data as SalesOrderERP;
+  return resp.data as SalesOrderERP;
 };
 
 export const createInvoiceForOrder = async (

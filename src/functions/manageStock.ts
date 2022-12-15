@@ -1,22 +1,20 @@
 import { Request, Response } from "express";
 
-import { erpLogin } from "../controllers/erpnext";
 import { erpGetStockStateRegistry } from "../controllers/erpnext/bin";
 import { erpGetitemById } from "../controllers/erpnext/item";
 import { WooCommerceApi } from "../controllers/woocomerce";
 import logger from "../utilities/logger";
 
 export const manageStock = async (req: Request, res: Response) => {
-  const bodyPlainText = `{"items": [${
-    Object.keys(req.body['{"items": '])[0]
-  }]}`;
-  const body = JSON.parse(bodyPlainText);
-  const itemCodes = body.items.map((item) => item.item_code);
   try {
-    const cookieId = await erpLogin();
+    const bodyPlainText = `{"items": [${
+      Object.keys(req.body['{"items": '])[0]
+    }]}`;
+    const body = JSON.parse(bodyPlainText);
+    const itemCodes = body.items.map((item) => item.item_code);
     const stockToUpdate = await Promise.all(
       itemCodes.map(async (itemCode) => {
-        const quantity = await erpGetStockStateRegistry(itemCode, cookieId);
+        const quantity = await erpGetStockStateRegistry(itemCode);
         const { woocommerce_id } = await erpGetitemById(itemCode);
         return {
           woocommerce_id,
@@ -38,5 +36,5 @@ export const manageStock = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error(error);
   }
-  res.status(200).send("Ok");
+  res.status(200).send()
 };

@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 
-import { erpLogin } from "../../controllers/erpnext";
 import {
   addSubscriptionCommentToOrder,
   addCustomerGroupCommentToOrder,
@@ -35,10 +34,11 @@ export const buildIncomingOrder = async (
   req: Request<SalesOrderWoo>,
   res: Response
 ) => {
-  const cookieId = await erpLogin();
   const wooOrder: SalesOrderWoo = req.body;
+  // console.log('wooorder => ', wooOrder)
 
   const customerExists = await erpSearchCustomer(wooOrder);
+
   if (!customerExists) {
     await erpCreateCustomer(wooOrder);
   }
@@ -148,8 +148,10 @@ export const buildIncomingOrder = async (
       deliveryDateString,
       items,
     );
-    logger.info(`Sales order created => ${orderGenerated.name}`);
+    logger.info(`Sales order created =>`);
+    logger.info(orderGenerated.name)
     const customerGroup = await getCustomerB2BGroup(wooOrder);
+    logger.info('customerGroup =>', customerGroup)
     if (customerGroup !== "Guest" && Boolean(customerGroup)) {
       await addTagToOrder(
         orderGenerated.name,
@@ -166,5 +168,40 @@ export const buildIncomingOrder = async (
     );
     logger.info(`Invoice created => ${createdInvoice.name} `);
   }
-  res.send("Ok");
+  res.status(200).send();
 };
+
+
+const a = {
+  docstatus: 1,
+    woocommerce_id: 1762,
+    title: "{customer_name}",
+    customer: "Bruno Diaz",
+    customer_name: "Bruno Diaz",
+    order_type: "Sales",
+    transaction_date: "2022-12-12",
+    delivery_date: "2022-12-12",
+    po_no: 1762,
+    customer_address: "Bruno Diaz-Billing",
+    contact_person: "Bruno Diaz-Bruno Diaz",
+    shipping_address_name: "Bruno Diaz-Shipping",
+    territory: "United States",
+    currency: "USD",
+    selling_price_list: "Standard Selling",
+    items: [
+      {
+        "item_code": "Test 001",
+        "qty": 1,
+        "rate": "5.00"
+      }
+    ],
+    taxes: [
+      {
+        "tax_amount": "10.00",
+        "charge_type": "Actual",
+        "account_head": "Freight and Forwarding Charges - AOI",
+        "description": "Shipping Total",
+        "doctype": "Sales Taxes and Charges"
+      }
+    ]
+}

@@ -12,12 +12,13 @@ export const erpSearchCustomer = async ({ billing }: SalesOrderWoo) => {
     const resp = await erpApi.get(
       `${CUSTOMER_URL}?filters=[["woocommerce_email","=","${email}"]]`
     );
+
     const { data } = resp.data;
 
     if (data.length === 0) {
-      return true;
+      return false;
     }
-    return false;
+    return true;
   } catch (error) {
     logger.error("error =>", error);
   }

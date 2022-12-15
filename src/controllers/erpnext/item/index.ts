@@ -1,6 +1,5 @@
 import erpApi from "..";
 import { Item } from "../../../types/item";
-import logger from "../../../utilities/logger";
 
 const ITEM_URL = `/api/resource/Item`;
 
@@ -13,7 +12,6 @@ export const erpSetWoocomerceId = async (
   });
 
   const data = resp.data;
-  logger.info(data);
   return data.name;
 };
 

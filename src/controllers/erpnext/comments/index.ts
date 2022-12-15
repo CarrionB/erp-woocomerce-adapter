@@ -1,6 +1,8 @@
 import erpApi from "..";
 
-const SUBCRIPTION_DOC_URL = `/app/subscription/`;
+const { ERP_URL } = process.env;
+
+const SUBCRIPTION_DOC_URL = `${ERP_URL}app/subscription/`;
 
 const ADD_COMMENTS_URL = `/api/method/frappe.desk.form.utils.add_comment`;
 
