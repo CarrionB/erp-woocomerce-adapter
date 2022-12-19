@@ -28,14 +28,38 @@ import { getCustomerB2BGroup } from "../../controllers/woocomerce/customer";
 import { getVariationById } from "../../controllers/woocomerce/productVariations";
 import { SalesOrderWoo } from "../../types/salesOrder";
 import logger from "../../utilities/logger";
-import { formatDateString } from "./utils";
+import {
+  formatDateString,
+  isObjectEmpty,
+  testIfIntegrationRequest,
+} from "./utils";
 
 export const buildIncomingOrder = async (
   req: Request<SalesOrderWoo>,
   res: Response
 ) => {
+  const bodyEmpty = isObjectEmpty(req.body);
+
+  if (bodyEmpty) {
+    logger.info("Body empty, testing if integration request...");
+
+    const isIntegrationRequest = testIfIntegrationRequest(req);
+    if (isIntegrationRequest) {
+      logger.info(
+        `Webhook integration request from ${req.headers["x-forwarded-for"]} accepted`
+      );
+      res.status(200).send();
+      return;
+    }
+    logger.info(
+      `No integration request from ${req.headers["x-forwarded-for"]}, rejecting...`
+    );
+    res.status(401).send();
+    return;
+  }
+
   const wooOrder: SalesOrderWoo = req.body;
-  // console.log('wooorder => ', wooOrder)
+  console.log("wooorder => ", wooOrder);
 
   const customerExists = await erpSearchCustomer(wooOrder);
 
@@ -94,11 +118,7 @@ export const buildIncomingOrder = async (
 
         const subscriptionId = !!subscriptionExists
           ? subscriptionExists
-          : await erpCreateSubscription(
-              wooOrder,
-              item,
-              subscriptionLength,
-            );
+          : await erpCreateSubscription(wooOrder, item, subscriptionLength);
 
         const subcriptionData = await getSubscriptionById(subscriptionId);
 
@@ -122,19 +142,13 @@ export const buildIncomingOrder = async (
 
         const createdInvoiceForSub = await createInvoiceForOrder(
           wooOrder,
-          orderForSub,
+          orderForSub
         );
 
-        await erpAddInvoiceToSub(
-          subscriptionId,
-          createdInvoiceForSub.name,
-        );
+        await erpAddInvoiceToSub(subscriptionId, createdInvoiceForSub.name);
         logger.info("Invoice created => ", createdInvoiceForSub.name);
 
-        await addSubscriptionCommentToOrder(
-          subcriptionData,
-          orderForSub.name,
-        );
+        await addSubscriptionCommentToOrder(subcriptionData, orderForSub.name);
       }
     })
   );
@@ -146,62 +160,21 @@ export const buildIncomingOrder = async (
       wooOrder,
       transactionDateString,
       deliveryDateString,
-      items,
+      items
     );
     logger.info(`Sales order created =>`);
-    logger.info(orderGenerated.name)
+    logger.info(orderGenerated.name);
     const customerGroup = await getCustomerB2BGroup(wooOrder);
-    logger.info('customerGroup =>', customerGroup)
+    logger.info("customerGroup =>", customerGroup);
     if (customerGroup !== "Guest" && Boolean(customerGroup)) {
-      await addTagToOrder(
-        orderGenerated.name,
-        customerGroup,
-      );
-      await addCustomerGroupCommentToOrder(
-        orderGenerated.name,
-        customerGroup,
-      );
+      await addTagToOrder(orderGenerated.name, customerGroup);
+      await addCustomerGroupCommentToOrder(orderGenerated.name, customerGroup);
     }
     const createdInvoice = await createInvoiceForOrder(
       wooOrder,
-      orderGenerated,
+      orderGenerated
     );
     logger.info(`Invoice created => ${createdInvoice.name} `);
   }
   res.status(200).send();
 };
-
-
-const a = {
-  docstatus: 1,
-    woocommerce_id: 1762,
-    title: "{customer_name}",
-    customer: "Bruno Diaz",
-    customer_name: "Bruno Diaz",
-    order_type: "Sales",
-    transaction_date: "2022-12-12",
-    delivery_date: "2022-12-12",
-    po_no: 1762,
-    customer_address: "Bruno Diaz-Billing",
-    contact_person: "Bruno Diaz-Bruno Diaz",
-    shipping_address_name: "Bruno Diaz-Shipping",
-    territory: "United States",
-    currency: "USD",
-    selling_price_list: "Standard Selling",
-    items: [
-      {
-        "item_code": "Test 001",
-        "qty": 1,
-        "rate": "5.00"
-      }
-    ],
-    taxes: [
-      {
-        "tax_amount": "10.00",
-        "charge_type": "Actual",
-        "account_head": "Freight and Forwarding Charges - AOI",
-        "description": "Shipping Total",
-        "doctype": "Sales Taxes and Charges"
-      }
-    ]
-}

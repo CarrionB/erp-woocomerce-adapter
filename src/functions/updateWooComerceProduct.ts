@@ -37,7 +37,7 @@ export const updateWooComerceProduct = async (req: Request, res: Response) => {
       );
       logger.info("updateWooComerceProduct");
       logger.info("Woocomerce response -> ");
-      logger.info(respW.id);
+      logger.info(respW.data.id);
     } catch (error) {
       logger.error(error);
     }
