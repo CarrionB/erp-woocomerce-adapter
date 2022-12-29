@@ -48,13 +48,13 @@ export const buildIncomingOrder = async (
       logger.info(
         `Webhook integration request from ${req.headers["x-forwarded-for"]} accepted`
       );
-      res.status(200).send();
+      res.status(200).send({});
       return;
     }
     logger.info(
       `No integration request from ${req.headers["x-forwarded-for"]}, rejecting...`
     );
-    res.status(401).send();
+    res.status(401).send({});
     return;
   }
 
@@ -176,5 +176,5 @@ export const buildIncomingOrder = async (
     );
     logger.info(`Invoice created => ${createdInvoice.name} `);
   }
-  res.status(200).send();
+  res.status(200).send({});
 };

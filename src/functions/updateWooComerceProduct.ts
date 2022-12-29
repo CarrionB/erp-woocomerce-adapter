@@ -27,20 +27,16 @@ export const updateWooComerceProduct = async (req: Request, res: Response) => {
       regular_price: (body.standard_rate as Number).toFixed(2),
       images: images,
     };
-
-    logger.info("dataToSend -> ", dataToSend);
-
     try {
       const respW = await WooCommerceApi.put(
         `products/${body.woocommerce_id}`,
         dataToSend
       );
-      logger.info("updateWooComerceProduct");
-      logger.info("Woocomerce response -> ");
+      logger.info("Woocomerce updated product -> ");
       logger.info(respW.data.id);
     } catch (error) {
       logger.error(error);
     }
   }
-  res.status(200).send()
+  res.status(200).send({})
 };

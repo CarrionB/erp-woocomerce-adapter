@@ -36,5 +36,5 @@ export const manageStock = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error(error);
   }
-  res.status(200).send()
+  res.status(200).send({})
 };

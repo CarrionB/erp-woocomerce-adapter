@@ -44,13 +44,12 @@ export const createWooComerceProduct = async (req: Request, res: Response) => {
   logger.info("dataToSend -> ", dataToSend);
 
   try {
-    res.status(200).send()
+    res.status(200).send({})
     const respW = await WooCommerceApi.post("products", dataToSend);
     logger.info("Woo added product -> ", respW.data.id);
     const { id } = respW.data;
     const respUpdateItemERP = await erpSetWoocomerceId(body.item_code, id);
     logger.info("Updated item erp  -> ", respUpdateItemERP);
-    // await new Promise((r)=>setTimeout(r, 4000))
   } catch (error) {
     logger.error(error);
   }
