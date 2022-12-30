@@ -5,7 +5,7 @@ import { isCookieInvalid } from "./utils";
 const { ERP_URL, ERP_USER, ERP_PASSWORD } = process.env;
 
 export const erpLogin = async () => {
-  if (isCookieInvalid) {
+  if (isCookieInvalid()) {
     const respLoginERP = await axios({
       method: "POST",
       url: `${ERP_URL}/api/method/login`,
