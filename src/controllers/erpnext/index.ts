@@ -6,7 +6,7 @@ const { ERP_URL, ERP_USER, ERP_PASSWORD } = process.env;
 
 export const erpLogin = async () => {
   if (isCookieInvalid()) {
-    const respLoginERP = await axios({
+    const {headers} = await axios({
       method: "POST",
       url: `${ERP_URL}/api/method/login`,
       data: {
@@ -15,11 +15,13 @@ export const erpLogin = async () => {
       },
       headers: { "Content-Type": "application/json" },
     });
-    const cookieSettings = respLoginERP.headers["set-cookie"][0].split(";");
-    const cookieId = cookieSettings[0];
-    const expirationDateString = cookieSettings[1].split("=")[1];
-    storage.setItem("cookieId", cookieId);
-    storage.setItem("expirationDateString", expirationDateString);
+    if('set-cookie' in headers){
+      const cookieSettings = headers["set-cookie"][0].split(";");
+      const cookieId = cookieSettings[0];
+      const expirationDateString = cookieSettings[1].split("=")[1];
+      storage.setItem("cookieId", cookieId);
+      storage.setItem("expirationDateString", expirationDateString);
+    }
   }
 };
 
