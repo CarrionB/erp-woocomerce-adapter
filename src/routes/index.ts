@@ -4,6 +4,7 @@ import {
   testFunction,
   createWooComerceProduct,
   updateWooComerceProduct,
+  deleteWooComerceProduct,
   manageStock,
   buildIncomingOrder,
 } from "../functions";
@@ -18,9 +19,11 @@ const routes = (app: Express) => {
   app.post("/", jsonParser, testFunction);
 
   app.post("/item_creation", urlencodedParser, createWooComerceProduct);
-
+  
   app.post("/item_update", urlencodedParser, updateWooComerceProduct);
 
+  app.post("/item_deletion", urlencodedParser, deleteWooComerceProduct);
+  
   app.post("/stock", urlencodedParser, manageStock);
 
   app.post("/stock_discount", urlencodedParser, manageStock);
