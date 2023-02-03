@@ -1,8 +1,8 @@
 import { createWooComerceProduct } from "./createWooComerceProduct";
 import { updateWooComerceProduct } from "./updateWooComerceProduct";
 import { deleteWooComerceProduct } from "./deleteWooComerceProduct";
-import { createWoocomerceProductCategory } from "./createWoocomerceProductCategory";
-import { deleteWooComerceProductCategory } from "./deleteWoocomerceProductCategory";
+import { createWoocomerceProductCategory } from "./createWooComerceProductCategory";
+import { deleteWooComerceProductCategory } from "./deleteWooComerceProductCategory";
 import { manageStock } from "./manageStock";
 import { buildIncomingOrder } from "./buildIncomingOrder";
 import { testFunction } from "./test";
