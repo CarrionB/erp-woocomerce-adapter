@@ -7,6 +7,8 @@ import {
   deleteWooComerceProduct,
   manageStock,
   buildIncomingOrder,
+  createWoocomerceProductCategory,
+  deleteWooComerceProductCategory,
 } from "../functions";
 
 const jsonParser = bodyParser.json();
@@ -23,6 +25,10 @@ const routes = (app: Express) => {
   app.post("/item_update", urlencodedParser, updateWooComerceProduct);
 
   app.post("/item_deletion", urlencodedParser, deleteWooComerceProduct);
+  
+  app.post("/item_category_creation", urlencodedParser, createWoocomerceProductCategory);
+  
+  app.post("/item_category_deletion", urlencodedParser, deleteWooComerceProductCategory);
   
   app.post("/stock", urlencodedParser, manageStock);
 
