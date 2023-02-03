@@ -4,7 +4,7 @@ export const isCookieInvalid = () => {
   const storedCookie = storage.getItem("cookieId");
 
   if (storedCookie === null) {
-    return Boolean(storedCookie);
+    return !Boolean(storedCookie);
   }
 
   const storedExpDateString = storage.getItem("expirationDateString");
