@@ -5,7 +5,7 @@ const ITEM_URL = `/api/resource/Item`;
 
 export const erpSetWoocomerceId = async (
   item_code: string,
-  id: string,
+  id: number,
 ) => {
   const { data: resp } = await erpApi.put(`${ITEM_URL}/${item_code}`, {
     woocommerce_id: id,

@@ -28,12 +28,11 @@ export const updateWooComerceProduct = async (req: Request, res: Response) => {
       images: images,
     };
     try {
-      const respW = await WooCommerceApi.put(
+      const {data} = await WooCommerceApi.put(
         `products/${body.woocommerce_id}`,
         dataToSend
       );
-      logger.info("Woocomerce updated product -> ");
-      logger.info(respW.data.id);
+      logger.info(`Woocomerce updated product -> ${data.id}`);
     } catch (error) {
       logger.error(error);
     }

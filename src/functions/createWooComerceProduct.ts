@@ -1,22 +1,14 @@
 import { Request, Response } from "express";
 import { erpSetWoocomerceId } from "../controllers/erpnext/item";
 import { WooCommerceApi } from "../controllers/woocomerce";
-import { categories, ERP_URL } from "./constants";
+import { ERP_URL } from "./constants";
 import logger from "../utilities/logger";
+import { ProductCategooryWoo } from "../types/productCategory";
+import { ProductWoo } from "../types/product";
 
 export const createWooComerceProduct = async (req: Request, res: Response) => {
   const bodyPlainText = Object.keys(req.body)[0];
   const body: AddItemRequestBody = JSON.parse(bodyPlainText);
-  // const bodyFromreq = JSON.parse(bodyPlainText);
-  // console.log('bodyFromreq', bodyFromreq)
-  // const body = {
-  //   item_name: 'TEST001',
-  //   item_group: 'Beans',
-  //   image: '',
-  //   item_code: 'TEST001',
-  //   opening_stock: 0,
-  //   valuation_rate: 0
-  // };
   const categoriesAux = [];
   const images = [];
   if (body.image !== null && body.image !== "") {
@@ -30,26 +22,36 @@ export const createWooComerceProduct = async (req: Request, res: Response) => {
       });
     }
   }
-  categoriesAux.push({ id: categories[body.item_group] });
-  const dataToSend = {
-    name: body.item_name,
-    type: "simple",
-    status: "draft",
-    manage_stock: true,
-    stock_quantity: body.opening_stock,
-    regular_price: body.valuation_rate.toFixed(2),
-    categories: categoriesAux,
-    images: images,
-  };
-  logger.info("dataToSend -> ", dataToSend);
+  const { data: categories }: { data: ProductCategooryWoo[] } =
+    await WooCommerceApi.get(`products/categories`);
 
   try {
-    res.status(200).send({})
-    const respW = await WooCommerceApi.post("products", dataToSend);
-    logger.info("Woo added product -> ", respW.data.id);
-    const { id } = respW.data;
+    res.status(200).send({});
+    const categoryFound = categories.find(
+      (cat) => cat.name === body.item_group
+    );
+
+    categoriesAux.push({ id: categoryFound.id });
+    const dataToSend = {
+      name: body.item_name,
+      type: "simple",
+      status: "draft",
+      manage_stock: true,
+      stock_quantity: body.opening_stock,
+      regular_price: body.valuation_rate.toFixed(2),
+      categories: categoriesAux,
+      images: images,
+    };
+    logger.info("dataToSend -> ", dataToSend);
+
+    const { data }: { data: ProductWoo } = await WooCommerceApi.post(
+      "products",
+      dataToSend
+    );
+    logger.info(`Woo added product -> ${data.id}`);
+    const { id } = data;
     const respUpdateItemERP = await erpSetWoocomerceId(body.item_code, id);
-    logger.info("Updated item erp  -> ", respUpdateItemERP);
+    logger.info(`Updated item erp -> ${respUpdateItemERP}`);
   } catch (error) {
     logger.error(error);
   }

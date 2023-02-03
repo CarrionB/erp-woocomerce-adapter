@@ -6,7 +6,7 @@ const { ERP_URL, ERP_USER, ERP_PASSWORD } = process.env;
 
 export const erpLogin = async () => {
   if (isCookieInvalid()) {
-    const {headers} = await axios({
+    const { headers } = await axios({
       method: "POST",
       url: `${ERP_URL}/api/method/login`,
       data: {
@@ -15,7 +15,7 @@ export const erpLogin = async () => {
       },
       headers: { "Content-Type": "application/json" },
     });
-    if('set-cookie' in headers){
+    if ("set-cookie" in headers) {
       const cookieSettings = headers["set-cookie"][0].split(";");
       const cookieId = cookieSettings[0];
       const expirationDateString = cookieSettings[1].split("=")[1];
@@ -35,7 +35,7 @@ export const getConfig = async () => {
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
-      Cookie: storedCookie
+      Cookie: storedCookie,
     },
   };
   return config;
@@ -49,10 +49,8 @@ erpApi.interceptors.request.use(async (config) => {
   };
 });
 
-erpApi.interceptors.response.use(
-  response => {
-    return response;
-  },
-);
+erpApi.interceptors.response.use((response) => {
+  return response;
+});
 
 export default erpApi;
