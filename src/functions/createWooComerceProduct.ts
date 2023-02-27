@@ -8,17 +8,26 @@ import { ProductWoo } from "../types/product";
 
 export const createWooComerceProduct = async (req: Request, res: Response) => {
   const bodyPlainText = Object.keys(req.body)[0];
-  const body: AddItemRequestBody = JSON.parse(bodyPlainText);
+  const {
+    item_code,
+    item_name,
+    item_group,
+    opening_stock,
+    standard_rate,
+    image,
+  }: AddItemRequestBody = JSON.parse(bodyPlainText);
+  console.log("valuation rate =>", standard_rate);
+  const isSubscription = item_group === "Subscription";
   const categoriesAux = [];
   const images = [];
-  if (body.image !== null && body.image !== "") {
-    if ("/files/" === body.image.substring(0, 7)) {
+  if (image !== null && image !== "") {
+    if ("/files/" === image.substring(0, 7)) {
       images.push({
-        src: `${ERP_URL}${body.image}`,
+        src: `${ERP_URL}${image}`,
       });
     } else {
       images.push({
-        src: body.image,
+        src: image,
       });
     }
   }
@@ -27,21 +36,42 @@ export const createWooComerceProduct = async (req: Request, res: Response) => {
 
   try {
     res.status(200).send({});
-    const categoryFound = categories.find(
-      (cat) => cat.name === body.item_group
-    );
+    const categoryFound = categories.find((cat) => cat.name === item_group);
 
     categoriesAux.push({ id: categoryFound.id });
-    const dataToSend = {
-      name: body.item_name,
-      type: "simple",
-      status: "draft",
-      manage_stock: true,
-      stock_quantity: body.opening_stock,
-      regular_price: body.valuation_rate.toFixed(2),
-      categories: categoriesAux,
-      images: images,
-    };
+    const dataToSend = isSubscription
+      ? {
+          name: item_name,
+          type: "variable-subscription",
+          status: "draft",
+          manage_stock: true,
+          stock_quantity: opening_stock,
+          regular_price: standard_rate.toFixed(2),
+          categories: categoriesAux,
+          images: images,
+          attributes: [
+            {
+              name: "Choose subscription type",
+              visible: true,
+              variation: true,
+              options: [
+                "[Auto-delivery] 1/mo - 15%",
+                "[Auto-delivery] 2/mo - 10%",
+                "[Auto-delivery] 3/mo - 5%",
+              ],
+            },
+          ],
+        }
+      : {
+          name: item_name,
+          type: "simple",
+          status: "draft",
+          manage_stock: true,
+          stock_quantity: opening_stock,
+          regular_price: standard_rate.toFixed(2),
+          categories: categoriesAux,
+          images: images,
+        };
     logger.info("dataToSend -> ", dataToSend);
 
     const { data }: { data: ProductWoo } = await WooCommerceApi.post(
@@ -50,10 +80,53 @@ export const createWooComerceProduct = async (req: Request, res: Response) => {
     );
     logger.info(`Woo added product -> ${data.id}`);
     const { id } = data;
-    const respUpdateItemERP = await erpSetWoocomerceId(body.item_code, id);
+    const respUpdateItemERP = await erpSetWoocomerceId(item_code, id);
     logger.info(`Updated item erp -> ${respUpdateItemERP}`);
+    if (isSubscription) {
+      addVariations(id, standard_rate);
+    }
   } catch (error) {
     logger.error(error);
+  }
+};
+
+const addVariations = async (id: number, valuation_rate: number) => {
+  const options = [
+    {
+      discount: 0.85,
+      option: "[Auto-delivery] 1/mo - 15%",
+    },
+    {
+      discount: 0.9,
+      option: "[Auto-delivery] 2/mo - 10%",
+    },
+    {
+      discount: 0.95,
+      option: "[Auto-delivery] 3/mo - 5%",
+    },
+  ];
+  let menuPosition = 1;
+  for (const { option, discount } of options) {
+    const dataVariation = {
+      regular_price: (valuation_rate * discount).toFixed(2),
+      menu_order: menuPosition,
+      attributes: [
+        {
+          id: 0,
+          name: "Choose subscription type",
+          option,
+        },
+      ],
+    };
+
+    const { data: variation } = await WooCommerceApi.post(
+      `products/${id}/variations`,
+      dataVariation
+    );
+
+    logger.info(`variation => ${variation.id}`);
+
+    menuPosition++;
   }
 };
 
@@ -63,5 +136,5 @@ type AddItemRequestBody = {
   image: string | null;
   item_code: string;
   opening_stock: number;
-  valuation_rate: number;
+  standard_rate: number;
 };

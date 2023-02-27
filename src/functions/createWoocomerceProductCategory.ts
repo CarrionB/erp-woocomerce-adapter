@@ -11,6 +11,7 @@ export const createWoocomerceProductCategory = async (
   const body: CreateProductCategoryBody = JSON.parse(bodyPlainText);
   const dataToSend = {
     name: body.item_group_name,
+    display: 'products'
   };
   res.status(200).send({});
   try {

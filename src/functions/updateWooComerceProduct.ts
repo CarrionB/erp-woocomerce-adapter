@@ -1,41 +1,68 @@
 import { Request, Response } from "express";
 
 import { WooCommerceApi } from "../controllers/woocomerce";
+import { ProductCategooryWoo } from "../types/productCategory";
 import { removeHTMLTags } from "../utilities";
 import logger from "../utilities/logger";
 import { ERP_URL } from "./constants";
 
 export const updateWooComerceProduct = async (req: Request, res: Response) => {
   const bodyPlainText = Object.keys(req.body)[0];
-  const body = JSON.parse(bodyPlainText);
-  if (body.woocommerce_id) {
+  const {
+    image,
+    item_name,
+    item_group,
+    description,
+    standard_rate,
+    woocommerce_id,
+  }: UpdatedItemRequestBody = JSON.parse(bodyPlainText);
+  if (woocommerce_id) {
     const images = [];
-    if (body.image !== null && body.image !== "") {
-      if ("/files/" === body.image.substring(0, 7)) {
+    const categoriesAux = [];
+
+    if (image !== null && image !== "") {
+      if ("/files/" === image.substring(0, 7)) {
         images.push({
-          src: `${ERP_URL}${body.image}`,
+          src: `${ERP_URL}${image}`,
         });
       } else {
         images.push({
-          src: body.image,
+          src: image,
         });
       }
     }
-    const dataToSend = {
-      name: body.item_name,
-      description: removeHTMLTags(body.description),
-      regular_price: (body.standard_rate as Number).toFixed(2),
-      images: images,
-    };
+    const { data: categories }: { data: ProductCategooryWoo[] } =
+      await WooCommerceApi.get(`products/categories`);
+
+    res.status(200).send({});
+
     try {
-      const {data} = await WooCommerceApi.put(
-        `products/${body.woocommerce_id}`,
+      console.log("categories =>", categories);
+      const categoryFound = categories.find((cat) => cat.name === item_group);
+      categoriesAux.push({ id: categoryFound.id });
+      const dataToSend = {
+        name: item_name,
+        description: removeHTMLTags(description),
+        regular_price: standard_rate.toFixed(2),
+        images: images,
+        categories: categoriesAux,
+      };
+      const { data } = await WooCommerceApi.put(
+        `products/${woocommerce_id}`,
         dataToSend
       );
-      logger.info(`Woocomerce updated product -> ${data.id}`);
+      logger.info(`Woocomerce updated -> ${data.id}`);
     } catch (error) {
       logger.error(error);
     }
   }
-  res.status(200).send({})
+};
+
+type UpdatedItemRequestBody = {
+  woocommerce_id: string;
+  description: string;
+  item_group: string;
+  item_name: string;
+  image: string;
+  standard_rate: number;
 };
