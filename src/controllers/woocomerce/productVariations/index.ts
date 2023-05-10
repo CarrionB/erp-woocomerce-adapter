@@ -49,6 +49,7 @@ export const getVariationById = async (
     return data;
   } catch (error) {
     logger.error(error);
+    return undefined
   }
 };
 
