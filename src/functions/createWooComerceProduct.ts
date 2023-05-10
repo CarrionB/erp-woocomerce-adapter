@@ -16,7 +16,6 @@ export const createWooComerceProduct = async (req: Request, res: Response) => {
     standard_rate,
     image,
   }: AddItemRequestBody = JSON.parse(bodyPlainText);
-  console.log("valuation rate =>", standard_rate);
   const isSubscription = item_group === "Subscription";
   const categoriesAux = [];
   const images = [];
@@ -71,6 +70,7 @@ export const createWooComerceProduct = async (req: Request, res: Response) => {
           regular_price: standard_rate.toFixed(2),
           categories: categoriesAux,
           images: images,
+          weight: "2.2",
         };
     logger.info("dataToSend -> ", dataToSend);
 
@@ -115,6 +115,78 @@ const addVariations = async (id: number, valuation_rate: number) => {
           id: 0,
           name: "Choose subscription type",
           option,
+        },
+      ],
+      weight: "2.2",
+      meta_data: [
+        {
+          "key": "_subscription_period",
+          "value": "month",
+        },
+        {
+          "key": "_subscription_period_interval",
+          "value": `${menuPosition}`
+        },
+        {
+          "key": "_subscription_length",
+          "value": "0"
+        },
+        {
+          "key": "_subscription_trial_period",
+          "value": "month"
+        },
+        {
+          "key": "wcb2b_barcode",
+          "value": ""
+        },
+        {
+          "key": "wcb2b_product_group_hide_prices",
+          "value": []
+        },
+        {
+          "key": "wcb2b_product_group_hide_stocks",
+          "value": []
+        },
+        {
+          "key": "wcb2b_product_group_prices",
+          "value": {
+            "654": {
+              "regular_price": "",
+              "sale_price": ""
+            },
+            "686": {
+              "regular_price": "",
+              "sale_price": ""
+            },
+            "1200": {
+              "regular_price": "",
+              "sale_price": ""
+            },
+            "1816": {
+              "regular_price": "",
+              "sale_price": ""
+            }
+          }
+        },
+        {
+          "key": "wcb2b_product_group_tier_prices",
+          "value": ""
+        },
+        {
+          "key": "_subscription_sign_up_fee",
+          "value": "0"
+        },
+        {
+          "key": "_subscription_price",
+          "value": (valuation_rate * discount).toFixed(2)
+        },
+        {
+          "key": "_subscription_trial_length",
+          "value": "0"
+        },
+        {
+          "key": "_subscription_payment_sync_date",
+          "value": "0"
         },
       ],
     };
