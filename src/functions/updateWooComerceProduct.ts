@@ -37,7 +37,6 @@ export const updateWooComerceProduct = async (req: Request, res: Response) => {
     res.status(200).send({});
 
     try {
-      console.log("categories =>", categories);
       const categoryFound = categories.find((cat) => cat.name === item_group);
       categoriesAux.push({ id: categoryFound.id });
       const dataToSend = {
