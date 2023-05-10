@@ -105,3 +105,6 @@ dist
 
 # storage id
 src/storage
+
+# DS_Store
+.DS_Store
