@@ -59,7 +59,7 @@ export const buildIncomingOrder = async (
   }
 
   const wooOrder: SalesOrderWoo = req.body;
-  console.log("wooorder => ", wooOrder);
+  // console.log("wooorder => ", wooOrder);
 
   const customerExists = await erpSearchCustomer(wooOrder);
 
@@ -88,6 +88,14 @@ export const buildIncomingOrder = async (
           item.product_id,
           item.variation_id
         );
+
+        if(!variationParameters){
+          return {
+            item_code: itemId,
+            qty: item.quantity,
+            rate: item.total,
+          };
+        }
 
         logger.info("variationParameters", variationParameters);
 
